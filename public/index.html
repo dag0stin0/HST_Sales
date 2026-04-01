@@ -370,8 +370,8 @@ function render(lumaData, zapriteData){
       if (ticketName.includes('vip') || ticketName.includes('saylor')) {
         tier = 'VIP';
       }
-      // Amount is in cents on the ticket itself
-      lumaAmount = Math.round((ticket.amount || 0) / 100);
+      // Take the amount as-is from Luma (already in dollars)
+      lumaAmount = ticket.amount || 0;
 
       // If amount is 0 on the ticket, look up the ticket type price
       if (lumaAmount === 0) {
@@ -379,7 +379,7 @@ function render(lumaData, zapriteData){
         const tt = ttLookup[ttId];
         if (tt) {
           if (tt.name?.toLowerCase().includes('vip') || tt.name?.toLowerCase().includes('saylor')) tier = 'VIP';
-          lumaAmount = Math.round(tt.cents / 100);
+          lumaAmount = tt.cents || 0;
         }
       }
     }
