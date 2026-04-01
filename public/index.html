@@ -312,16 +312,21 @@ function animateValue(el,start,end,duration,prefix='',suffix=''){
   requestAnimationFrame(update);
 }
 
-// === Fetch both APIs in parallel ===
-Promise.all([
-  fetch('/api/luma').then(r=>{if(!r.ok)throw new Error('Luma API '+r.status);return r.json()}),
-  fetch('/api/zaprite').then(r=>{if(!r.ok)throw new Error('Zaprite API '+r.status);return r.json()})
-]).then(([lumaData, zapriteData])=>{
-  render(lumaData, zapriteData);
-}).catch(err=>{
-  console.error('API Error:', err);
-  $('insights').innerHTML=`<div class="insight warn"><div class="insight-h">API Error</div><div class="insight-b">${err.message}. Check Vercel environment variables.</div></div>`;
-});
+// === Fetch both APIs in parallel, auto-refresh every 60s ===
+function loadData() {
+  $('ts').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  Promise.all([
+    fetch('/api/luma').then(r=>{if(!r.ok)throw new Error('Luma API '+r.status);return r.json()}),
+    fetch('/api/zaprite').then(r=>{if(!r.ok)throw new Error('Zaprite API '+r.status);return r.json()})
+  ]).then(([lumaData, zapriteData])=>{
+    render(lumaData, zapriteData);
+  }).catch(err=>{
+    console.error('API Error:', err);
+    $('insights').innerHTML=`<div class="insight warn"><div class="insight-h">API Error</div><div class="insight-b">${err.message}. Check Vercel environment variables.</div></div>`;
+  });
+}
+loadData();
+setInterval(loadData, 60000);
 
 function render(lumaData, zapriteData){
   // === Transform Luma guests ===
@@ -494,19 +499,12 @@ function render(lumaData, zapriteData){
   const vipRev = G.filter(g => g.t === 'VIP').reduce((s, g) => s + g.a, 0);
   const vipPct = totalRev ? ((vipRev / totalRev) * 100).toFixed(0) : 0;
 
-  // Find Zaprite buyers not on Luma guest list
-  const lumaEmails = new Set(G.map(g => g.e.toLowerCase()));
-  const orphanBuyers = zComplete.filter(z => z.e !== '—' && !lumaEmails.has(z.e.toLowerCase()));
-
   const insightsArr = [
     { cls: 'hot', h: 'Velocity', b: `<strong>${n} guests</strong> registered. <strong>${Math.max(0, daysLeft)} days</strong> remaining.` },
     { cls: 'btc', h: 'Lightning', b: `<strong>${zComplete.length} confirmed</strong> Lightning payments — <strong>${fmtSats(btcSats)}</strong> (${fmt(btcConfirmed)}). ${btcPct}% of revenue on BTC rails.` },
-    { cls: 'gold', h: 'VIP Mix', b: `<strong>${vip} VIP</strong> guests driving <strong>${fmt(vipRev)}</strong> — ${vipPct}% of total revenue from ${n ? ((vip / n) * 100).toFixed(0) : 0}% of guests.` }
+    { cls: 'gold', h: 'VIP Mix', b: `<strong>${vip} VIP</strong> guests driving <strong>${fmt(vipRev)}</strong> — ${vipPct}% of total revenue from ${n ? ((vip / n) * 100).toFixed(0) : 0}% of guests.` },
+    { cls: 'green', h: 'Channels', b: `<strong>Luma</strong>: ${fmt(lumaRev)} · <strong>Zaprite</strong>: ${fmt(btcConfirmed)}. Combined: <strong>${fmt(totalRev)}</strong>.` }
   ];
-  if (orphanBuyers.length > 0) {
-    insightsArr.push({ cls: 'warn', h: 'Reconciliation', b: `<strong>${orphanBuyers.length} Zaprite buyer${orphanBuyers.length > 1 ? 's' : ''}</strong> paid via BTC but <strong>not on Luma guest list</strong>: ${orphanBuyers.map(z => z.e).join(', ')}` });
-  }
-  insightsArr.push({ cls: 'green', h: 'Channels', b: `<strong>Luma</strong>: ${fmt(lumaRev)} · <strong>Zaprite</strong>: ${fmt(btcConfirmed)}. Combined: <strong>${fmt(totalRev)}</strong>.` });
 
   $('insights').innerHTML = insightsArr.map(i => `<div class="insight ${i.cls}"><div class="insight-h">${i.h}</div><div class="insight-b">${i.b}</div></div>`).join('');
 
