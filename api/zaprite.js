@@ -19,7 +19,6 @@ export default async function handler(req, res) {
         sortBy: 'createdAt',
         sortOrder: 'desc',
         includePending: 'true',
-        type: 'paymentLink',
         search: 'HotSyle TakeOver 3'
       });
       const url = `${BASE}/v1/orders?${params}`;
