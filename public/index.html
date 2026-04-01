@@ -389,34 +389,26 @@ function render(lumaData, zapriteData){
     const isComped = COMPED.some(c => name.toLowerCase().includes(c));
     if (isComped) { lumaAmount = 0; }
 
-    // Check if this guest paid via Zaprite (BTC)
+    // Check if this guest also has a Zaprite (BTC) order
     const zapriteOrder = zapriteByEmail[email];
-    let btcAmount = 0;
-    let paidViaBtc = false;
-    if (zapriteOrder && (zapriteOrder.status === 'COMPLETE' || zapriteOrder.status === 'PAID')) {
-      btcAmount = zapriteOrder.totalAmount || 0;
-      // Zaprite amounts might be in cents
-      if (btcAmount > 1000) btcAmount = Math.round(btcAmount / 100);
-      paidViaBtc = true;
-      lumaAmount = 0; // Paid via BTC, not Luma card
-    }
+    const paidViaBtc = zapriteOrder && (zapriteOrder.status === 'COMPLETE' || zapriteOrder.status === 'PAID');
 
     return {
       n: name,
       e: email,
       t: tier,
-      a: paidViaBtc ? 0 : lumaAmount,
-      d: isComped ? 0 : btcAmount,
+      a: isComped ? 0 : lumaAmount,   // Luma revenue (card) — kept as-is
       r: registeredAt,
-      z: isComped ? 'COMP' : paidViaBtc ? 'YES' : 'NO'
+      z: isComped ? 'COMP' : paidViaBtc ? 'BTC' : 'LUMA'
     };
   });
 
   // Map Zaprite orders to dashboard format
+  // Zaprite totalAmount is in cents — convert to dollars
   const Z = rawOrders.map(order => {
     const email = order.customerData?.email || order.customerData?.name || '—';
-    let usd = order.totalAmount || 0;
-    if (usd > 1000) usd = Math.round(usd / 100); // cents to dollars
+    const rawAmount = order.totalAmount || 0;
+    const usd = Math.round(rawAmount / 100);
     const txns = order.transactions || [];
     const confirmedTx = txns.find(t => t.status === 'CONFIRMED') || txns[0] || {};
     const sats = (confirmedTx.currency === 'BTC') ? confirmedTx.amount || 0 : 0;
@@ -434,7 +426,6 @@ function render(lumaData, zapriteData){
   const ga = G.filter(g => g.t === 'GA').length;
   const vip = G.filter(g => g.t === 'VIP').length;
   const lumaRev = G.reduce((s, g) => s + g.a, 0);
-  const face = g => g.t === 'VIP' ? 225 : 85;
 
   const zComplete = Z.filter(z => z.status === 'COMPLETE' || z.status === 'PAID');
   const btcConfirmed = zComplete.reduce((s, z) => s + z.usd, 0);
@@ -521,9 +512,7 @@ function render(lumaData, zapriteData){
 
   // === Insights ===
   const btcPct = totalRev ? ((btcConfirmed / totalRev) * 100).toFixed(0) : 0;
-  const vipLuma = G.filter(g => g.t === 'VIP').reduce((s, g) => s + g.a, 0);
-  const vipBtc = G.filter(g => g.t === 'VIP').reduce((s, g) => s + g.d, 0);
-  const vipRev = vipLuma + vipBtc;
+  const vipRev = G.filter(g => g.t === 'VIP').reduce((s, g) => s + g.a, 0);
   const vipPct = totalRev ? ((vipRev / totalRev) * 100).toFixed(0) : 0;
 
   // Find Zaprite buyers not on Luma guest list
@@ -569,7 +558,7 @@ function render(lumaData, zapriteData){
       return g.n.toLowerCase().includes(q) || g.e.toLowerCase().includes(q) || g.t.toLowerCase().includes(q);
     });
     const d = [...filtered].sort((a, b) => {
-      let av = sortCol === 'p' ? face(a) : a[sortCol], bv = sortCol === 'p' ? face(b) : b[sortCol];
+      let av = sortCol === 'p' ? a.a : a[sortCol], bv = sortCol === 'p' ? b.a : b[sortCol];
       if (typeof av === 'string') av = av.toLowerCase();
       if (typeof bv === 'string') bv = bv.toLowerCase();
       return sortDir === 'asc' ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
@@ -582,12 +571,11 @@ function render(lumaData, zapriteData){
       return `<th class="${active ? 'sorted' : ''}" onclick="doSort('${c.f}')">${c.l}${ar}</th>`;
     }).join('') + '</tr>';
     $('t-b').innerHTML = d.map(g => {
-      const p = face(g);
       const tk = g.t === 'VIP' ? '<span class="tag tag-vip">VIP</span>' : '<span class="tag tag-ga">GA</span>';
-      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : g.z === 'YES' ? '<span class="tag tag-btc">BTC</span>' : '<span class="tag tag-luma">Luma</span>';
+      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : g.z === 'BTC' ? '<span class="tag tag-btc">BTC</span>' : '<span class="tag tag-luma">Luma</span>';
       const dt = new Date(g.r);
       const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
-      const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(p);
+      const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(g.a);
       return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
     }).join('');
   }

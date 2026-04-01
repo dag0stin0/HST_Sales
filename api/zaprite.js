@@ -1,5 +1,5 @@
 const PAYMENT_LINK_ID = 'pl_WlSsmXQdAd';
-const EVENT_NAME = 'HotStyle TakeOver 3';
+const EVENT_NAME = 'HotSyle TakeOver 3';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         return true;
       }
       const title = (order.title || order.invoice?.lineItems?.[0]?.description || '').toLowerCase();
-      return title.includes('hotstyle takeover 3');
+      return title.includes('hotsyle takeover 3');
     });
 
     return res.status(200).json({ orders: filtered });
