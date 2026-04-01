@@ -369,15 +369,15 @@ function render(lumaData, zapriteData){
       const ticketName = (ticket.name || '').toLowerCase();
       if (ticketName.includes('vip') || ticketName.includes('saylor')) tier = 'VIP';
 
-      // Pull the amount directly — no conversion
-      lumaAmount = ticket.price || ticket.amount || 0;
+      // Luma returns amounts in cents — convert to dollars
+      lumaAmount = Math.round((ticket.price || ticket.amount || 0) / 100);
 
       // Fallback: look up ticket type if amount is still 0
       if (lumaAmount === 0) {
         const tt = ttLookup[ticket.event_ticket_type_id];
         if (tt) {
           if (tt.name?.toLowerCase().includes('vip') || tt.name?.toLowerCase().includes('saylor')) tier = 'VIP';
-          lumaAmount = tt.price;
+          lumaAmount = Math.round(tt.price / 100);
         }
       }
     }
