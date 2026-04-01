@@ -20,9 +20,7 @@ export default async function handler(req, res) {
       const params = new URLSearchParams({
         page: String(page),
         sortBy: 'createdAt',
-        sortOrder: 'desc',
-        includePending: 'true',
-        search: EVENT_NAME
+        sortOrder: 'desc'
       });
 
       const ordersRes = await fetch(`${BASE}/v1/orders?${params}`, { headers });
