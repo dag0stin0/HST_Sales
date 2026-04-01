@@ -329,12 +329,13 @@ function render(lumaData, zapriteData){
   const rawGuests = lumaData.guests || [];
   const eventStartAt = lumaData.event?.start_at || '2026-04-27';
 
-  // Build ticket type lookup: event_ticket_type_id -> {name, price}
+  // Build ticket type lookup: event_ticket_type_id -> {name, dollars}
+  // Luma stores prices in cents
   const ttLookup = {};
   ticketTypes.forEach(tt => {
-    const price = tt.price || tt.amount || tt.cents || 0;
-    ttLookup[tt.api_id] = { name: tt.name, price };
-    if (tt.id) ttLookup[tt.id] = { name: tt.name, price };
+    const dollars = Math.round((tt.cents || 0) / 100);
+    ttLookup[tt.api_id] = { name: tt.name, dollars };
+    if (tt.id) ttLookup[tt.id] = { name: tt.name, dollars };
   });
 
   const rawOrders = zapriteData.orders || [];
@@ -354,7 +355,7 @@ function render(lumaData, zapriteData){
     const name = guest.user_name || guest.name || email.split('@')[0];
     const registeredAt = guest.registered_at || guest.created_at || '';
 
-    // Determine ticket tier and pull the dollar amount straight from Luma
+    // Determine ticket tier and pull the transaction amount from Luma
     let tier = 'GA';
     let lumaAmount = 0;
     const tickets = guest.event_tickets || [];
@@ -363,17 +364,8 @@ function render(lumaData, zapriteData){
       const ticketName = (ticket.name || '').toLowerCase();
       if (ticketName.includes('vip') || ticketName.includes('saylor')) tier = 'VIP';
 
-      // Luma returns amounts in cents — convert to dollars
-      lumaAmount = Math.round((ticket.price || ticket.amount || 0) / 100);
-
-      // Fallback: look up ticket type if amount is still 0
-      if (lumaAmount === 0) {
-        const tt = ttLookup[ticket.event_ticket_type_id];
-        if (tt) {
-          if (tt.name?.toLowerCase().includes('vip') || tt.name?.toLowerCase().includes('saylor')) tier = 'VIP';
-          lumaAmount = Math.round(tt.price / 100);
-        }
-      }
+      // ticket.amount is the actual transaction amount in cents
+      lumaAmount = Math.round((ticket.amount || 0) / 100);
     }
 
     // Comped guests — no revenue counted
