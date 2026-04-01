@@ -33,14 +33,17 @@ export default async function handler(req, res) {
       page++;
     }
 
-    // Only keep orders from the exact HotSyle TakeOver 3 payment link
+    // Strict filter: only orders from HotSyle TakeOver 3
     const PAYMENT_LINK_ID = 'pl_WlSsmXQdAd';
-    const filtered = allOrders.filter(order =>
-      order.paymentLink?.id === PAYMENT_LINK_ID ||
-      order.paymentLinkId === PAYMENT_LINK_ID
-    );
+    const filtered = allOrders.filter(order => {
+      // Match by payment link ID
+      if (order.paymentLink?.id === PAYMENT_LINK_ID || order.paymentLinkId === PAYMENT_LINK_ID) return true;
+      // Match by title containing "HotSyle TakeOver 3"
+      const title = (order.title || order.invoice?.lineItems?.[0]?.description || '').toLowerCase();
+      return title.includes('hotsyle takeover 3');
+    });
 
-    return res.status(200).json({ orders: filtered.length > 0 ? filtered : allOrders });
+    return res.status(200).json({ orders: filtered });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
