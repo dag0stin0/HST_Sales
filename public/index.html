@@ -384,6 +384,11 @@ function render(lumaData, zapriteData){
       }
     }
 
+    // Comped guests — no revenue counted
+    const COMPED = ['andrew newman', 'normies in shambs'];
+    const isComped = COMPED.some(c => name.toLowerCase().includes(c));
+    if (isComped) { lumaAmount = 0; }
+
     // Check if this guest paid via Zaprite (BTC)
     const zapriteOrder = zapriteByEmail[email];
     let btcAmount = 0;
@@ -401,9 +406,9 @@ function render(lumaData, zapriteData){
       e: email,
       t: tier,
       a: paidViaBtc ? 0 : lumaAmount,
-      d: btcAmount,
+      d: isComped ? 0 : btcAmount,
       r: registeredAt,
-      z: paidViaBtc ? 'YES' : 'NO'
+      z: isComped ? 'COMP' : paidViaBtc ? 'YES' : 'NO'
     };
   });
 
@@ -579,10 +584,11 @@ function render(lumaData, zapriteData){
     $('t-b').innerHTML = d.map(g => {
       const p = face(g);
       const tk = g.t === 'VIP' ? '<span class="tag tag-vip">VIP</span>' : '<span class="tag tag-ga">GA</span>';
-      const ch = g.z === 'YES' ? '<span class="tag tag-btc">BTC</span>' : '<span class="tag tag-luma">Luma</span>';
+      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : g.z === 'YES' ? '<span class="tag tag-btc">BTC</span>' : '<span class="tag tag-luma">Luma</span>';
       const dt = new Date(g.r);
       const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
-      return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem">${fmt(p)}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
+      const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(p);
+      return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
     }).join('');
   }
   window.doSort = function(f){

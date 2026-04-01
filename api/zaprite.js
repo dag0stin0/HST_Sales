@@ -1,3 +1,6 @@
+const PAYMENT_LINK_ID = 'pl_WlSsmXQdAd';
+const EVENT_NAME = 'HotStyle TakeOver 3';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
@@ -19,28 +22,28 @@ export default async function handler(req, res) {
         sortBy: 'createdAt',
         sortOrder: 'desc',
         includePending: 'true',
-        search: 'HotSyle TakeOver 3'
+        search: EVENT_NAME
       });
-      const url = `${BASE}/v1/orders?${params}`;
-      const ordersRes = await fetch(url, { headers });
+
+      const ordersRes = await fetch(`${BASE}/v1/orders?${params}`, { headers });
       if (!ordersRes.ok) {
         const text = await ordersRes.text();
         return res.status(ordersRes.status).json({ error: 'Zaprite list-orders failed', detail: text });
       }
+
       const data = await ordersRes.json();
       if (data.items) allOrders = allOrders.concat(data.items);
       totalPages = data.meta?.pagesCount || 1;
       page++;
     }
 
-    // Strict filter: only orders from HotSyle TakeOver 3
-    const PAYMENT_LINK_ID = 'pl_WlSsmXQdAd';
+    // Strict filter: only orders tied to the Hotstyle Takeover 3 payment link or name
     const filtered = allOrders.filter(order => {
-      // Match by payment link ID
-      if (order.paymentLink?.id === PAYMENT_LINK_ID || order.paymentLinkId === PAYMENT_LINK_ID) return true;
-      // Match by title containing "HotSyle TakeOver 3"
+      if (order.paymentLink?.id === PAYMENT_LINK_ID || order.paymentLinkId === PAYMENT_LINK_ID) {
+        return true;
+      }
       const title = (order.title || order.invoice?.lineItems?.[0]?.description || '').toLowerCase();
-      return title.includes('hotsyle takeover 3');
+      return title.includes('hotstyle takeover 3');
     });
 
     return res.status(200).json({ orders: filtered });

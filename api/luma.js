@@ -1,3 +1,6 @@
+const EVENT_SLUG = '6cvlxirh';
+const EVENT_NAME_MATCH = 'hotstyle takeover iii';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
@@ -9,59 +12,52 @@ export default async function handler(req, res) {
   const headers = { 'x-luma-api-key': API_KEY };
 
   try {
-    // 1. Find the HOTSTYLE III event — paginate through all events
-    let allEvents = [];
+    // Paginate through events to find Hotstyle Takeover III
+    let event = null;
     let cursor = null;
     let hasMore = true;
 
-    while (hasMore) {
+    while (hasMore && !event) {
       let url = `${BASE}/v1/calendar/list-events?pagination_limit=50`;
       if (cursor) url += `&pagination_cursor=${cursor}`;
+
       const eventsRes = await fetch(url, { headers });
       if (!eventsRes.ok) {
         const text = await eventsRes.text();
         return res.status(eventsRes.status).json({ error: 'Luma list-events failed', detail: text });
       }
-      const eventsData = await eventsRes.json();
-      if (eventsData.entries) allEvents = allEvents.concat(eventsData.entries);
-      hasMore = eventsData.has_more || false;
-      cursor = eventsData.next_cursor || null;
-    }
 
-    // Match by URL slug first, then by name containing "III" or "3"
-    let event = allEvents.find(e =>
-      e.event?.url?.includes('6cvlxirh')
-    );
-    if (!event) {
-      event = allEvents.find(e =>
-        e.event?.name?.toLowerCase().includes('hotstyle iii') ||
-        e.event?.name?.toLowerCase().includes('hotstyle 3')
+      const data = await eventsRes.json();
+      const entries = data.entries || [];
+
+      // Match by URL slug (most reliable) or exact name
+      event = entries.find(e =>
+        e.event?.url?.includes(EVENT_SLUG) ||
+        e.event?.name?.toLowerCase().includes(EVENT_NAME_MATCH)
       );
-    }
-    // Fallback: most recent hotstyle event by start date
-    if (!event) {
-      const hotstyles = allEvents
-        .filter(e => e.event?.name?.toLowerCase().includes('hotstyle'))
-        .sort((a, b) => new Date(b.event.start_at) - new Date(a.event.start_at));
-      event = hotstyles[0];
+
+      hasMore = data.has_more || false;
+      cursor = data.next_cursor || null;
     }
 
-    if (!event) return res.status(404).json({
-      error: 'HOTSTYLE event not found',
-      events: allEvents.map(e => ({ name: e.event?.name, url: e.event?.url, start: e.event?.start_at }))
-    });
+    if (!event) {
+      return res.status(404).json({ error: 'Hotstyle Takeover III not found on Luma' });
+    }
 
     const eventId = event.event.api_id;
 
-    // 2. Get ticket types so we know GA vs VIP pricing
-    const ticketTypesRes = await fetch(`${BASE}/v1/event/ticket-types/list?event_id=${eventId}`, { headers });
+    // Get ticket types (GA vs VIP pricing)
+    const ticketTypesRes = await fetch(
+      `${BASE}/v1/event/ticket-types/list?event_id=${eventId}`,
+      { headers }
+    );
     let ticketTypes = [];
     if (ticketTypesRes.ok) {
       const ttData = await ticketTypesRes.json();
       ticketTypes = ttData.ticket_types || [];
     }
 
-    // 3. Paginate through all guests
+    // Paginate through all guests for this event
     let allGuests = [];
     let gCursor = null;
     let gHasMore = true;
@@ -75,6 +71,7 @@ export default async function handler(req, res) {
         const text = await guestsRes.text();
         return res.status(guestsRes.status).json({ error: 'Luma get-guests failed', detail: text });
       }
+
       const guestsData = await guestsRes.json();
       if (guestsData.entries) allGuests = allGuests.concat(guestsData.entries);
       gHasMore = guestsData.has_more || false;
