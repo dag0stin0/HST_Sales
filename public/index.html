@@ -395,18 +395,17 @@ function render(lumaData, zapriteData){
       n: name,
       e: email,
       t: tier,
-      a: isComped ? 0 : lumaAmount,   // Luma revenue (card) — kept as-is
+      a: (isComped || paidViaBtc) ? 0 : lumaAmount,   // Luma revenue — zero if paid via BTC or comped
       r: registeredAt,
       z: isComped ? 'COMP' : paidViaBtc ? 'BTC' : 'LUMA'
     };
   });
 
   // Map Zaprite orders to dashboard format
-  // Zaprite totalAmount is in cents — convert to dollars
+  // Zaprite totalAmount is already in dollars
   const Z = rawOrders.map(order => {
     const email = order.customerData?.email || order.customerData?.name || '—';
-    const rawAmount = order.totalAmount || 0;
-    const usd = Math.round(rawAmount / 100);
+    const usd = order.totalAmount || 0;
     const txns = order.transactions || [];
     const confirmedTx = txns.find(t => t.status === 'CONFIRMED') || txns[0] || {};
     const sats = (confirmedTx.currency === 'BTC') ? confirmedTx.amount || 0 : 0;
