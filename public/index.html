@@ -384,10 +384,10 @@ function render(lumaData, zapriteData){
   });
 
   // Map Zaprite orders to dashboard format
-  // Zaprite totalAmount is in cents (smallest currency unit per API docs)
+  // Zaprite totalAmount is in dollars
   const Z = rawOrders.map(order => {
     const email = order.customerData?.email || order.customerData?.name || '—';
-    const usd = Math.round((order.totalAmount || 0) / 100);
+    const usd = order.totalAmount || 0;
     const txns = order.transactions || [];
     const confirmedTx = txns.find(t => t.status === 'CONFIRMED') || txns[0] || {};
     const sats = (confirmedTx.currency === 'BTC') ? confirmedTx.amount || 0 : 0;

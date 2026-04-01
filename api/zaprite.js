@@ -37,14 +37,10 @@ export default async function handler(req, res) {
       page++;
     }
 
-    // Strict filter: only orders tied to the Hotstyle Takeover 3 payment link or name
-    const filtered = allOrders.filter(order => {
-      if (order.paymentLink?.id === PAYMENT_LINK_ID || order.paymentLinkId === PAYMENT_LINK_ID) {
-        return true;
-      }
-      const title = (order.title || order.invoice?.lineItems?.[0]?.description || '').toLowerCase();
-      return title.includes('hotsyle takeover 3');
-    });
+    // Strict filter: only orders from the HotSyle TakeOver 3 payment link
+    const filtered = allOrders.filter(order =>
+      order.paymentLink?.id === PAYMENT_LINK_ID || order.paymentLinkId === PAYMENT_LINK_ID
+    );
 
     return res.status(200).json({ orders: filtered });
   } catch (err) {
