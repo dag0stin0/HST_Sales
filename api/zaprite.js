@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         sortOrder: 'desc',
         includePending: 'true',
         type: 'paymentLink',
-        search: 'hotstyle'
+        search: 'HotSyle TakeOver 3'
       });
       const url = `${BASE}/v1/orders?${params}`;
       const ordersRes = await fetch(url, { headers });
@@ -34,7 +34,14 @@ export default async function handler(req, res) {
       page++;
     }
 
-    return res.status(200).json({ orders: allOrders });
+    // Only keep orders from the exact HotSyle TakeOver 3 payment link
+    const PAYMENT_LINK_ID = 'pl_WlSsmXQdAd';
+    const filtered = allOrders.filter(order =>
+      order.paymentLink?.id === PAYMENT_LINK_ID ||
+      order.paymentLinkId === PAYMENT_LINK_ID
+    );
+
+    return res.status(200).json({ orders: filtered.length > 0 ? filtered : allOrders });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
