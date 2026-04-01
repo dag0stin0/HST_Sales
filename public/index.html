@@ -337,13 +337,7 @@ function render(lumaData, zapriteData){
     if (tt.id) ttLookup[tt.id] = { name: tt.name, price };
   });
 
-  // Build Zaprite order lookup by email (lowercase)
   const rawOrders = zapriteData.orders || [];
-  const zapriteByEmail = {};
-  rawOrders.forEach(order => {
-    const email = (order.customerData?.email || '').toLowerCase().trim();
-    if (email) zapriteByEmail[email] = order;
-  });
 
   // Debug: log raw shapes to console
   console.log('Luma event:', lumaData.event?.name, '| Guests:', rawGuests.length, '| Ticket types:', ticketTypes.length);
@@ -387,17 +381,13 @@ function render(lumaData, zapriteData){
     const isComped = COMPED.some(c => name.toLowerCase().includes(c));
     if (isComped) { lumaAmount = 0; }
 
-    // Check if this guest also has a Zaprite (BTC) order
-    const zapriteOrder = zapriteByEmail[email];
-    const paidViaBtc = zapriteOrder && (zapriteOrder.status === 'COMPLETE' || zapriteOrder.status === 'PAID');
-
     return {
       n: name,
       e: email,
       t: tier,
-      a: (isComped || paidViaBtc) ? 0 : lumaAmount,   // Luma revenue — zero if paid via BTC or comped
+      a: isComped ? 0 : lumaAmount,   // Luma revenue — straight from Luma, no Zaprite involvement
       r: registeredAt,
-      z: isComped ? 'COMP' : paidViaBtc ? 'BTC' : 'LUMA'
+      z: isComped ? 'COMP' : 'LUMA'
     };
   });
 
@@ -569,7 +559,7 @@ function render(lumaData, zapriteData){
     }).join('') + '</tr>';
     $('t-b').innerHTML = d.map(g => {
       const tk = g.t === 'VIP' ? '<span class="tag tag-vip">VIP</span>' : '<span class="tag tag-ga">GA</span>';
-      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : g.z === 'BTC' ? '<span class="tag tag-btc">BTC</span>' : '<span class="tag tag-luma">Luma</span>';
+      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : '<span class="tag tag-luma">Luma</span>';
       const dt = new Date(g.r);
       const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
       const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(g.a);
