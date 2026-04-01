@@ -78,6 +78,12 @@ export default async function handler(req, res) {
       gCursor = guestsData.next_cursor || null;
     }
 
+    // Only include guests with approval status "going"
+    const goingGuests = allGuests.filter(g =>
+      g.guest?.approval_status === 'going' ||
+      g.guest?.approval_status === 'approved'
+    );
+
     return res.status(200).json({
       event: {
         id: eventId,
@@ -89,7 +95,7 @@ export default async function handler(req, res) {
         geo_address_json: event.event.geo_address_json
       },
       ticket_types: ticketTypes,
-      guests: allGuests
+      guests: goingGuests
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
