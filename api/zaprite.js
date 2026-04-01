@@ -9,13 +9,20 @@ export default async function handler(req, res) {
   const headers = { 'Authorization': `Bearer ${API_KEY}` };
 
   try {
-    // Paginate through all orders
     let allOrders = [];
     let page = 1;
     let totalPages = 1;
 
     while (page <= totalPages) {
-      const url = `${BASE}/v1/orders?page=${page}&sortBy=createdAt&sortOrder=desc&includePending=true`;
+      const params = new URLSearchParams({
+        page: String(page),
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        includePending: 'true',
+        type: 'paymentLink',
+        search: 'hotstyle'
+      });
+      const url = `${BASE}/v1/orders?${params}`;
       const ordersRes = await fetch(url, { headers });
       if (!ordersRes.ok) {
         const text = await ordersRes.text();
