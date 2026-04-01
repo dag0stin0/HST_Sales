@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     let gHasMore = true;
 
     while (gHasMore) {
-      let url = `${BASE}/v1/event/get-guests?event_id=${eventId}&pagination_limit=100`;
+      let url = `${BASE}/v1/event/get-guests?event_id=${eventId}&approval_status=approved&pagination_limit=100`;
       if (gCursor) url += `&pagination_cursor=${gCursor}`;
 
       const guestsRes = await fetch(url, { headers });
@@ -78,12 +78,6 @@ export default async function handler(req, res) {
       gCursor = guestsData.next_cursor || null;
     }
 
-    // Only include guests with approval status "going"
-    const goingGuests = allGuests.filter(g =>
-      g.guest?.approval_status === 'going' ||
-      g.guest?.approval_status === 'approved'
-    );
-
     return res.status(200).json({
       event: {
         id: eventId,
@@ -95,7 +89,7 @@ export default async function handler(req, res) {
         geo_address_json: event.event.geo_address_json
       },
       ticket_types: ticketTypes,
-      guests: goingGuests
+      guests: allGuests
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
