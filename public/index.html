@@ -329,12 +329,12 @@ function render(lumaData, zapriteData){
   const rawGuests = lumaData.guests || [];
   const eventStartAt = lumaData.event?.start_at || '2026-04-27';
 
-  // Build ticket type lookup: event_ticket_type_id -> {name, cents}
+  // Build ticket type lookup: event_ticket_type_id -> {name, price}
   const ttLookup = {};
   ticketTypes.forEach(tt => {
-    ttLookup[tt.api_id] = { name: tt.name, cents: tt.cents || 0 };
-    // Also index by id field
-    if (tt.id) ttLookup[tt.id] = { name: tt.name, cents: tt.cents || 0 };
+    const price = tt.price || tt.amount || tt.cents || 0;
+    ttLookup[tt.api_id] = { name: tt.name, price };
+    if (tt.id) ttLookup[tt.id] = { name: tt.name, price };
   });
 
   // Build Zaprite order lookup by email (lowercase)
@@ -348,8 +348,9 @@ function render(lumaData, zapriteData){
   // Debug: log raw shapes to console
   console.log('Luma event:', lumaData.event?.name, '| Guests:', rawGuests.length, '| Ticket types:', ticketTypes.length);
   console.log('Zaprite orders:', rawOrders.length);
-  if (rawGuests.length > 0) console.log('Sample guest:', JSON.stringify(rawGuests[0]).slice(0, 500));
+  if (rawGuests.length > 0) console.log('Sample guest:', JSON.stringify(rawGuests[0]).slice(0, 800));
   if (rawOrders.length > 0) console.log('Sample order:', JSON.stringify(rawOrders[0]).slice(0, 500));
+  if (ticketTypes.length > 0) console.log('Ticket types:', JSON.stringify(ticketTypes).slice(0, 500));
 
   // Map Luma guests to dashboard format
   const G = rawGuests.map(entry => {
@@ -359,27 +360,24 @@ function render(lumaData, zapriteData){
     const name = guest.user_name || guest.name || email.split('@')[0];
     const registeredAt = guest.registered_at || guest.created_at || '';
 
-    // Determine ticket tier and price from event_tickets array
+    // Determine ticket tier and pull the dollar amount straight from Luma
     let tier = 'GA';
     let lumaAmount = 0;
     const tickets = guest.event_tickets || [];
     if (tickets.length > 0) {
       const ticket = tickets[0];
-      // Ticket name directly tells us the tier (e.g. "VIP Ticket", "GA Ticket")
       const ticketName = (ticket.name || '').toLowerCase();
-      if (ticketName.includes('vip') || ticketName.includes('saylor')) {
-        tier = 'VIP';
-      }
-      // Take the amount as-is from Luma (already in dollars)
-      lumaAmount = ticket.amount || 0;
+      if (ticketName.includes('vip') || ticketName.includes('saylor')) tier = 'VIP';
 
-      // If amount is 0 on the ticket, look up the ticket type price
+      // Pull the amount directly — no conversion
+      lumaAmount = ticket.price || ticket.amount || 0;
+
+      // Fallback: look up ticket type if amount is still 0
       if (lumaAmount === 0) {
-        const ttId = ticket.event_ticket_type_id;
-        const tt = ttLookup[ttId];
+        const tt = ttLookup[ticket.event_ticket_type_id];
         if (tt) {
           if (tt.name?.toLowerCase().includes('vip') || tt.name?.toLowerCase().includes('saylor')) tier = 'VIP';
-          lumaAmount = tt.cents || 0;
+          lumaAmount = tt.price;
         }
       }
     }
