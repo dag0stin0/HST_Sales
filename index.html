@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050505">
+<meta name="description" content="HOTSTYLE III Event Dashboard — Live ticketing, revenue tracking, and guest management">
+<title>HOTSTYLE III</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505;--s:#0a0a0a;--s2:#111;--s3:#1a1a1a;
+  --b:rgba(255,255,255,.06);--b2:rgba(255,255,255,.08);
+  --t:#f0f0f0;--t2:#999;--t3:#808080;
+  --blue-bg:rgba(61,139,253,.08);--gold-bg:rgba(232,185,49,.08);--btc-bg:rgba(247,147,26,.08);
+  --green-bg:rgba(52,211,153,.08);--red-bg:rgba(255,71,87,.06);--accent-bg:rgba(255,61,0,.08);
+  --neutral-bg:rgba(255,255,255,.03);
+  --accent:#ff3d00;--accent-g:linear-gradient(135deg,#ff3d00,#ff6b35);
+  --gold:#e8b931;--blue:#3d8bfd;--btc:#f7931a;--green:#34d399;--red:#ff4757;
+  --r:16px;--f:'Instrument Sans',system-ui,sans-serif;--m:'JetBrains Mono',monospace;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t);font-family:var(--f);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh;overflow-x:hidden}
+::selection{background:rgba(255,61,0,.25);color:var(--t)}
+:focus-visible{outline:2px solid rgba(255,61,0,.5);outline-offset:2px;border-radius:4px}
+
+/* Ambient background — static, no animation */
+.ambient{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.ambient::before{content:'';position:absolute;top:-20%;left:-5%;width:50%;height:60%;background:radial-gradient(ellipse,rgba(255,61,0,.03) 0%,transparent 70%)}
+.ambient::after{content:'';position:absolute;bottom:-15%;right:-5%;width:40%;height:50%;background:radial-gradient(ellipse,rgba(247,147,26,.02) 0%,transparent 70%)}
+.wrap{max-width:1280px;margin:0 auto;padding:32px 28px 64px;position:relative;z-index:1}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--b)}
+.hdr-l h1{font-size:2rem;font-weight:700;letter-spacing:-.03em;line-height:1}
+.hdr-l h1 span{background:var(--accent-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-l .sub{font-size:.7rem;color:var(--t3);margin-top:6px;font-family:var(--m);letter-spacing:.06em;text-transform:uppercase}
+.hdr-r{text-align:right;display:flex;flex-direction:column;gap:4px}
+.hdr-r .date{font-size:.85rem;font-weight:600;color:var(--t)}
+.hdr-r .venue{font-size:.72rem;color:var(--t2)}
+.hdr-r .link{font-size:.65rem;color:var(--accent);text-decoration:none;font-family:var(--m);transition:opacity .2s}
+.hdr-r .link:hover{opacity:.7}
+.pubkey-logo{opacity:.45;transition:opacity .3s}
+.pubkey-logo:hover{opacity:.7}
+
+/* Progress bar */
+.progress-section{margin-bottom:28px}
+.progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.progress-header .label{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);font-weight:600}
+.progress-header .values{font-family:var(--m);font-size:.72rem;color:var(--t2)}
+.progress-header .values strong{color:var(--t);font-weight:600}
+.progress-track{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:3px;background:var(--accent-g);position:relative;transition:width 1.5s cubic-bezier(.16,1,.3,1)}
+.progress-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2));animation:shimmer 2s infinite}
+@keyframes shimmer{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+.progress-milestones{display:flex;justify-content:space-between;margin-top:6px}
+.milestone{font-size:.55rem;font-family:var(--m);color:var(--t3)}
+.milestone.hit{color:var(--green)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.k{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);padding:22px 22px 18px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s}
+.k:hover{border-color:var(--b2);transform:translateY(-1px)}
+.k::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.k.c1::before{background:linear-gradient(90deg,var(--t) 30%,transparent)}
+.k.c2::before{background:linear-gradient(90deg,var(--green) 30%,transparent)}
+.k.c3::before{background:linear-gradient(90deg,var(--accent) 30%,transparent)}
+.k::after{content:'';position:absolute;top:0;right:0;width:120px;height:120px;border-radius:50%;filter:blur(50px);opacity:.06;pointer-events:none}
+.k.c1::after{background:var(--t)}.k.c2::after{background:var(--green)}.k.c3::after{background:var(--accent)}
+.k-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-weight:600;margin-bottom:12px}
+.k-val{font-size:2.2rem;font-weight:700;letter-spacing:-.05em;font-family:var(--m);line-height:1}
+.k.c1 .k-val{color:var(--t)}.k.c2 .k-val{color:var(--green)}.k.c3 .k-val{color:var(--t)}
+.k-detail{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+.k-pill{font-size:.58rem;font-family:var(--m);font-weight:500;padding:4px 10px;border-radius:6px;letter-spacing:.02em}
+.k-pill.ga{background:var(--blue-bg);color:var(--blue)}
+.k-pill.vip{background:var(--gold-bg);color:var(--gold)}
+.k-pill.btc{background:var(--btc-bg);color:var(--btc)}
+.k-pill.luma{background:var(--neutral-bg);color:var(--t2)}
+.k-pill.pending{background:var(--red-bg);color:var(--red)}
+.k-pill.accent{background:var(--accent-bg);color:var(--accent)}
+
+/* Mid section: grid for chart + insights */
+.mid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.card{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);padding:22px;display:flex;flex-direction:column}
+.card-t{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.card-t .badge{font-size:.55rem;font-family:var(--m);color:var(--accent);background:var(--accent-bg);padding:3px 8px;border-radius:5px;text-transform:none;letter-spacing:0}
+
+/* Revenue breakdown chart */
+.rev-chart{display:flex;gap:20px;align-items:center}
+.donut-wrap{position:relative;flex-shrink:0}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-center .total{font-family:var(--m);font-size:1.2rem;font-weight:700;color:var(--t)}
+.donut-center .total-label{font-size:.5rem;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-top:2px}
+.rev-legend{display:flex;flex-direction:column;gap:12px;flex:1}
+.rev-item{display:flex;align-items:center;gap:10px}
+.rev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rev-item-info{flex:1}
+.rev-item-label{font-size:.68rem;color:var(--t2)}
+.rev-item-val{font-family:var(--m);font-size:.82rem;font-weight:600;color:var(--t)}
+.rev-item-bar{height:3px;background:var(--s3);border-radius:2px;margin-top:4px;overflow:hidden}
+.rev-item-fill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+
+/* Insights */
+.insights{display:flex;flex-direction:column;gap:8px}
+.insight{padding:14px 16px;background:rgba(255,255,255,.015);border-radius:12px;border-left:2px solid var(--b2);transition:background .2s}
+.insight:hover{background:rgba(255,255,255,.025)}
+.insight.hot{border-left-color:var(--accent)}
+.insight.gold{border-left-color:var(--gold)}
+.insight.btc{border-left-color:var(--btc)}
+.insight.green{border-left-color:var(--green)}
+.insight.warn{border-left-color:var(--red)}
+.insight-h{font-size:.55rem;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);font-weight:600;margin-bottom:4px}
+.insight-b{font-size:.72rem;color:var(--t2);line-height:1.55}
+.insight-b strong{color:var(--t);font-weight:600}
+
+/* Tables */
+.tbl-wrap{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.tbl-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--b)}
+.tbl-bar h2{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-weight:600}
+.tbl-bar .tbl-right{display:flex;align-items:center;gap:12px}
+.tbl-bar .n{font-family:var(--m);font-size:.62rem;color:var(--t3)}
+.tbl-scroll{max-height:420px;overflow-y:auto;overflow-x:auto}
+.tbl-scroll thead{position:sticky;top:0;z-index:2;background:var(--s)}
+.search-input{background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:8px;padding:10px 12px;font-size:.7rem;color:var(--t);font-family:var(--f);outline:none;width:180px;transition:border-color .2s;min-height:44px}
+.search-input::placeholder{color:var(--t3)}
+.search-input:focus{border-color:rgba(255,61,0,.3)}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:10px 18px;font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);font-weight:600;cursor:pointer;user-select:none;border-bottom:1px solid var(--b);white-space:nowrap;transition:color .15s}
+thead th:hover{color:var(--accent)}
+thead th.sorted{color:var(--accent)}
+tbody td{padding:11px 18px;font-size:.76rem;border-bottom:1px solid rgba(255,255,255,.02)}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+tbody tr:last-child td{border-bottom:none}
+.nm{font-weight:600;color:var(--t)}
+.em{font-family:var(--m);font-size:.6rem;color:var(--t3);margin-top:1px}
+.tag{display:inline-block;padding:3px 9px;border-radius:6px;font-size:.55rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-family:var(--m)}
+.tag-vip{background:var(--gold-bg);color:var(--gold)}
+.tag-ga{background:var(--blue-bg);color:var(--blue)}
+.tag-btc{background:var(--btc-bg);color:var(--btc)}
+.tag-ln{background:rgba(247,147,26,.05);color:var(--btc)}
+.tag-luma{background:var(--neutral-bg);color:var(--t2)}
+.tag-pend{background:var(--red-bg);color:var(--red)}
+.tag-confirmed{background:var(--green-bg);color:var(--green)}
+.sats{font-family:var(--m);font-size:.6rem;color:var(--t3)}
+
+/* Timeline mini-chart */
+.timeline{display:flex;align-items:flex-end;gap:3px;height:40px;margin-top:8px}
+.timeline-bar{flex:1;min-width:0;border-radius:2px 2px 0 0;transition:height .8s cubic-bezier(.16,1,.3,1);position:relative}
+.timeline-bar:hover{opacity:.8}
+.timeline-bar .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);font-size:.5rem;font-family:var(--m);color:var(--t2);white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;background:var(--s3);padding:2px 6px;border-radius:4px}
+.timeline-bar:hover .tip,.timeline-bar:focus-visible .tip{opacity:1}
+
+/* Footer */
+.ftr{text-align:center;padding:32px 0 0;font-size:.58rem;color:var(--t3);font-family:var(--m)}
+.ftr a{color:var(--accent);text-decoration:none}
+.ftr .live-dot{display:inline-block;width:5px;height:5px;background:var(--green);border-radius:50%;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Animations */
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.k,.card,.progress-section,.tbl-wrap{animation:up .5s cubic-bezier(.16,1,.3,1) both}
+.k:nth-child(1){animation-delay:.05s}.k:nth-child(2){animation-delay:.1s}.k:nth-child(3){animation-delay:.15s}.k:nth-child(4){animation-delay:.2s}
+.progress-section{animation-delay:.02s}
+.card:nth-child(1){animation-delay:.25s}.card:nth-child(2){animation-delay:.3s}
+.tbl-wrap:nth-child(1){animation-delay:.35s}.tbl-wrap:nth-child(2){animation-delay:.4s}
+
+/* Responsive */
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}.mid{grid-template-columns:1fr}}
+@media(max-width:768px){.kpis{grid-template-columns:1fr}}
+@media(max-width:600px){
+  .hdr{flex-direction:column;align-items:flex-start;gap:12px}
+  .hdr-r{text-align:left}
+  .k-val{font-size:1.8rem}
+  .rev-chart{flex-direction:column;align-items:flex-start}
+  .search-input{width:140px}
+  thead th{padding:12px 18px;font-size:.62rem}
+  tbody td{padding:13px 18px}
+  .tbl-bar{flex-wrap:wrap;gap:10px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18)}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}
+  .progress-fill{transition:none}
+}
+
+/* Empty search state */
+.empty-state{padding:32px;text-align:center;font-size:.78rem;color:var(--t3)}
+
+/* Screen reader only */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<main class="wrap">
+
+<header class="hdr">
+  <div class="hdr-l">
+    <h1>HOTSTYLE <span>III</span></h1>
+    <div class="sub">Event Dashboard &mdash; Live</div>
+  </div>
+  <div class="hdr-r">
+    <a class="link" href="https://luma.com/6cvlxirh" target="_blank" rel="noopener noreferrer">luma.com/6cvlxirh &#8599;</a>
+    <svg class="pubkey-logo" width="120" height="33" role="img" aria-label="PubKey logo" viewBox="0 0 400 110" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#pk)"><path d="M84.4836 27.3167C84.4836 19.7689 82.3358 13.2702 78.2701 8.53279C73.7929 3.31356 67.1894.556732 59.1647.556732C48.4527.556732 38.9213 4.38952 31.9599 7.18382C27.8033 8.85397 24.2183 10.2939 21.953 10.2939C21.4936 10.2939 21.0608 10.492 20.7616 10.84C20.4624 11.1879 20.3289 11.6483 20.3983 12.1033C20.9166 15.6149 22.2416 19.0676 24.2451 22.1296C22.498 27.3113 19.6397 34.7414 16.3486 43.2795C10.6266 58.1342 4.13526 74.975 1.00446 86.5643C-0.983013 93.4644 3.72767e-05 98.8657 3.90553 102.586C6.52877 105.214 12.2882 108.581 16.4768 109.93C16.6371 109.979 16.7974 110.005 16.9577 110.005C17.2942 110.005 17.6255 109.898 17.9033 109.69C18.3093 109.384 18.5498 108.897 18.5337 108.389C18.4589 105.263 20.19 96.6763 28.626 73.6742C32.4781 79.7285 37.2544 81.0079 45.589 78.6418C56.0179 75.5745 65.7896 68.6102 73.093 59.0282C80.4445 49.382 84.4889 38.1245 84.4889 27.322L84.4836 27.3167ZM37.8368 49.5426C39.0015 46.5502 40.0914 43.7613 41.0584 41.2346C43.3077 35.2981 44.2426 30.6302 41.9827 26.5458C42.9283 26.2461 43.9007 25.9195 44.9051 25.5823C48.7999 24.2708 52.8283 22.9165 56.2476 22.9165C61.601 22.9165 62.7229 26.5191 62.7229 29.5435C62.7229 34.8431 58.935 41.529 52.5879 47.4281C47.1117 52.5189 40.5722 56.2874 34.5991 57.8719C35.7211 54.9706 36.8057 52.1816 37.8314 49.5426H37.8368Z" fill="white"/><path d="M146.667 7.45682C143.392 4.74281 137.894 1.88428 133.898.256951C133.412.0588879 132.861.117772 132.423.406837C131.985.695902 131.729 1.19374 131.729 1.71834C131.729 9.4428 126.712 29.6881 117.127 53.4342C110.93 68.835 103.749 84.5837 97.4823 84.5837C95.7138 84.5837 94.4743 83.1758 94.4743 81.1524C94.4743 74.9054 99.5178 62.8128 104.855 50.0083C107.997 42.4712 111.245 34.6825 113.82 27.3006C116.908 18.8802 116.176 11.9534 111.758 7.79941C108.884 5.064 104.177 2.03417 100.052.262304C99.5712.0588879 99.0209.101712 98.5775.385425C98.1394.669137 97.8669 1.15091 97.8562 1.67551C97.7494 6.08108 93.5287 16.6641 88.6348 28.9172C81.3581 47.1444 72.3076 69.8307 72.3076 83.936C72.3076 99.9095 80.7864 109.443 94.9872 109.443C107.468 109.443 117.806 102.554 126.594 88.3897C135.148 74.6752 143.568 53.0167 149.696 28.944C152.159 18.9445 152.453 12.2264 146.672 7.45146L146.667 7.45682Z" fill="white"/><path d="M197.834 45.8329C209.726 39.4199 217.217 28.9119 217.217 18.27C217.217 11.6536 214.412.551361 195.648.551361C184.958.551361 174.529 4.37345 166.91 7.16239C162.326 8.84325 158.362 10.2939 156.075 10.2939C155.616 10.2939 155.183 10.492 154.884 10.8399C154.585 11.1879 154.451 11.6483 154.521 12.1033C155.06 15.7487 156.455 19.3245 158.474 22.2634C156.535 27.4184 153.254 35.5818 149.792 44.2002C145.673 54.446 141.415 65.045 138.909 71.838C134.753 83.042 133.38 88.6306 137.686 95.1024C143.253 103.55 152.816 109.443 160.937 109.443C170.885 109.443 182.666 104.026 192.448 94.9526C202.717 85.4295 208.61 73.9097 208.61 63.3427C208.61 55.4791 204.41 48.8574 197.834 45.8275V45.8329ZM185.049 62.0955C185.049 66.0353 181.603 71.3188 176.062 75.8849C170.591 80.3922 163.795 83.6362 157.08 85.0012C159.377 78.6043 162.641 69.8735 165.916 61.3514C171.59 59.0496 176.442 57.8344 179.962 57.8344C183.291 57.8344 185.049 59.3065 185.049 62.0955ZM173.316 41.1168C173.813 39.6983 174.246 38.4778 174.641 37.4393C175.865 33.9598 176.767 30.2876 175.48 26.7385C176.543 26.3852 177.617 26.0052 178.664 25.6411C182.879 24.1637 187.234 22.6381 190.509 22.6381C191.973 22.6381 192.822 23.061 192.822 25.2343C192.822 29.5756 186.71 36.1438 173.145 41.604C173.204 41.4434 173.257 41.2774 173.316 41.1222V41.1168Z" fill="white"/><path d="M395.469 6.47184C395.469 6.47184 395.443 6.45043 395.427 6.43972C393.124 4.71068 389.379 2.30181 384.581.647714C384.095.481769 383.561.556711 383.144.861836C382.727 1.16161 382.481 1.64338 382.487 2.15728C382.62 16.2144 369.392 45.4046 358.894 54.2104C356.313 56.3677 354.71 56.5979 354.342 56.3731C354.144 56.2553 353.941 55.5647 354.224 54.2265C355.234 49.5533 357.654 43.3116 359.994 37.2787C361.741 32.7768 363.547 28.125 364.744 24.1637C366.678 17.7936 366.902 12.4833 361.682 7.25874C358.68 4.40021 354.849 1.94851 351.163.529946C350.698.353295 350.18.401473 349.758.669126C349.336.936779 349.068 1.38108 349.026 1.87892C348.577 7.39257 345.206 15.6845 341.476 24.5866C341.418 18.5376 339.954 11.7874 337.705 7.28015C335.45 2.76217 331.491.562065 325.603.562065C318.674.562065 311.509 2.04486 305.189 3.35101C298.153 4.80704 291.507 6.17742 287.467 4.94622C286.976 4.79633 286.442 4.89269 286.041 5.21387C285.635 5.5297 285.411 6.02218 285.437 6.53608C285.726 12.3495 287.291 18.0666 288.643 21.4872C278.364 46.941 271.327 65.9764 267.732 78.069C265.643 84.9851 265.856 90.1669 268.405 94.8508C268.496 95.0221 268.586 95.1774 268.677 95.3487C265.311 93.5554 260.012 85.8845 253.109 60.5645C273.78 42.3213 286.089 26.3477 286.089 17.7347C286.089 11.6643 281.585 5.7813 272.711.25694C272.219-.0481841 271.605-.0588902 271.103.224822C270.601.508534 270.296 1.04384 270.301 1.62197C270.424 9.48561 260.049 24.9238 242.258 43.5418C244.828 36.3633 247.088 29.6934 248.674 24.5866C250.731 17.7186 251.907 10.7436 246.66 6.23631C243.732 3.74178 240.201 1.82539 235.863.374708C235.382.214116 234.853.294412 234.442.594183C234.03.888601 233.784 1.37038 233.784 1.87356C233.784 7.21592 226.219 26.5619 218.9 45.2708C212.852 60.7304 206.601 76.7147 203.988 86.3127C201.707 94.4547 203.283 100.381 208.658 103.914C211.831 106.033 216.608 108.159 219.706 109.24C219.877 109.299 220.048 109.326 220.225 109.326C220.577 109.326 220.919 109.208 221.202 108.983C221.624 108.646 221.849 108.116 221.79 107.58C221.288 102.805 228.324 82.3461 233.052 69.0919C234.89 82.2176 238.363 95.3433 241.75 101.408C245.431 108.169 251.757 109.984 259.093 106.387C262.891 104.556 266.668 101.601 269.735 98.068C269.842 97.9449 269.922 97.8004 269.986 97.6505C274.565 105.3 279.288 109.047 284.374 109.047C290.064 109.047 296.817 107.527 303.341 106.055C310.27 104.492 317.434 102.875 320.058 104.16C320.581 104.417 321.206 104.363 321.677 104.015C322.147 103.673 322.392 103.095 322.307 102.516C322.152 101.414 321.981 100.306 321.794 99.2082C325.074 105.894 331.721 109.465 341.295 109.465C355.143 109.465 369.002 99.1708 378.362 81.9339C386.964 66.228 396.089 38.4457 399.215 22.3544C400.652 15.0046 400.47 10.5348 395.464 6.49325L395.469 6.47184ZM307.7 78.6043C301.663 78.6043 295.904 80.1995 290.331 81.7466C289.941 81.8536 289.556 81.9607 289.166 82.0677C290.657 77.6675 292.399 72.6892 294.194 67.7055C309.239 63.3749 318.642 61.8439 322.147 63.1607C322.633 63.3427 323.172 63.2731 323.6 62.9787C324.027 62.6843 324.278 62.1972 324.278 61.6833C324.278 57.7274 323.359 52.4064 322.088 49.0126C320.442 44.7194 317.552 42.9529 312.749 43.2741C310.633 43.3972 306.925 44.0128 302.844 44.8907C303.763 42.4979 304.703 40.2336 305.552 38.2208C307.011 34.6878 307.428 31.6901 306.808 29.2598C310.569 28.8637 314.672 28.1196 318.658 27.4023C326.982 25.9034 335.583 24.3511 339.152 26.337C339.639 26.61 340.237 26.6047 340.718 26.3156C340.745 26.2996 340.761 26.2782 340.782 26.2621C340.777 26.2835 340.766 26.2996 340.761 26.321C335.61 38.5848 330.289 51.2662 330.289 60.709C330.289 70.1518 336.054 75.9224 344.639 75.9224C350.319 75.9224 356.511 73.2512 361.907 68.7707C355.773 78.6097 348.662 83.8931 341.305 83.8931C334.429 83.8931 328.868 79.4983 327.142 72.6999C326.998 72.1217 326.538 71.6775 325.956 71.549C325.374 71.4205 324.77 71.6293 324.396 72.095C321.303 75.8957 319.459 81.7305 319.459 87.6992C319.459 88.3576 319.481 88.9946 319.518 89.6263C317.344 83.2668 313.839 78.6097 307.711 78.6097L307.7 78.6043Z" fill="white"/></g><defs><clipPath id="pk"><rect width="400" height="110" fill="white"/></clipPath></defs></svg>
+  </div>
+</header>
+
+<!-- Revenue progress -->
+<section class="progress-section">
+  <div class="progress-header">
+    <span class="label">Ticket Sales</span>
+    <span class="values"><strong id="prog-current"></strong></span>
+  </div>
+  <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="50000" aria-label="Ticket sales progress" id="prog-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="progress-milestones">
+    <span class="milestone" id="m-10k">$10K</span>
+    <span class="milestone" id="m-25k">$25K</span>
+    <span class="milestone" id="m-35k">$35K</span>
+    <span class="milestone" id="m-50k">$50K+</span>
+  </div>
+</section>
+
+<section class="kpis">
+  <div class="k c1">
+    <div class="k-label">Guests</div>
+    <div class="k-val" id="k-g"></div>
+    <div class="k-detail"><span class="k-pill ga" id="k-ga"></span><span class="k-pill vip" id="k-vip"></span></div>
+  </div>
+  <div class="k c2">
+    <div class="k-label">Total Revenue</div>
+    <div class="k-val" id="k-rev"></div>
+    <div class="k-detail"><span class="k-pill luma" id="k-luma"></span><span class="k-pill btc" id="k-btcr"></span></div>
+  </div>
+  <div class="k c3">
+    <div class="k-label">Days to Event</div>
+    <div class="k-val" id="k-days"></div>
+    <div class="k-detail"><span class="k-pill accent">Apr 27, 2026</span></div>
+  </div>
+</section>
+
+<section class="mid">
+  <div class="card">
+    <div class="card-t">Payment Breakdown <span class="badge">Live</span></div>
+    <div class="rev-chart">
+      <div class="donut-wrap"><canvas id="donut" width="140" height="140" role="img" aria-label="Payment breakdown chart"></canvas>
+        <div class="donut-center"><div class="total" id="donut-total"></div><div class="total-label">Confirmed</div></div>
+      </div>
+      <div class="rev-legend" id="rev-legend"></div>
+    </div>
+    <div style="margin-top:auto;padding-top:28px">
+      <div class="card-t" style="margin-bottom:8px">Registration Timeline</div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-t">Insights</div>
+    <div class="insights" id="insights"></div>
+  </div>
+</section>
+
+<section class="tbl-wrap">
+  <div class="tbl-bar">
+    <h2>Guest List</h2>
+    <div class="tbl-right">
+      <label for="guest-search" class="sr-only">Search guests</label>
+      <input type="text" class="search-input" id="guest-search" placeholder="Search guests..." aria-label="Search guests">
+      <div class="n" id="t-n"></div>
+    </div>
+  </div>
+  <div class="tbl-scroll"><table><thead id="t-h"></thead><tbody id="t-b"></tbody></table></div>
+</section>
+
+<section class="tbl-wrap">
+  <div class="tbl-bar">
+    <h2>Zaprite BTC Orders</h2>
+    <div class="n" id="z-n"></div>
+  </div>
+  <div style="overflow-x:auto">
+    <table><thead><tr><th>Customer</th><th>Amount</th><th>Sats</th><th>Method</th><th>Tickets</th><th>Status</th><th>Paid</th></tr></thead>
+    <tbody id="z-b"></tbody></table>
+  </div>
+</section>
+
+<footer class="ftr"><span class="live-dot"></span>Luma API + Zaprite API &middot; <span id="ts"></span></footer>
+
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=v=>'$'+v.toLocaleString();
+const fmtSats=v=>v.toLocaleString()+' sats';
+
+// === Color tokens (mirror CSS vars for JS-rendered elements) ===
+const COLORS = { blue: '#3d8bfd', btc: '#f7931a', green: '#34d399', gold: '#e8b931', red: '#ff4757', accent: '#ff3d00' };
+
+// === Show loading state ===
+$('k-g').textContent='…';$('k-rev').textContent='…';$('k-days').textContent='…';
+$('ts').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+
+// === Animated counter ===
+function animateValue(el,start,end,duration,prefix='',suffix=''){
+  const startTime=performance.now();
+  function update(now){
+    const elapsed=Math.min((now-startTime)/duration,1);
+    const ease=1-Math.pow(1-elapsed,3);
+    const current=Math.round(start+(end-start)*ease);
+    el.textContent=prefix+current.toLocaleString()+suffix;
+    if(elapsed<1)requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// === Fetch both APIs in parallel, auto-refresh every 60s (pause when hidden) ===
+let refreshTimer = null;
+function startPolling() { if (!refreshTimer) refreshTimer = setInterval(loadData, 60000); }
+function stopPolling() { if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; } }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { stopPolling(); } else { startPolling(); loadData(); }
+});
+
+function loadData() {
+  $('ts').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  Promise.all([
+    fetch('/api/luma').then(r=>{if(!r.ok)throw new Error('Luma API '+r.status);return r.json()}),
+    fetch('/api/zaprite').then(r=>{if(!r.ok)throw new Error('Zaprite API '+r.status);return r.json()})
+  ]).then(([lumaData, zapriteData])=>{
+    render(lumaData, zapriteData);
+  }).catch(err=>{
+    $('insights').innerHTML=`<div class="insight warn"><div class="insight-h">API Error</div><div class="insight-b">${err.message}. Check Vercel environment variables.</div></div>`;
+  });
+}
+loadData();
+startPolling();
+
+// === Comped guests list (hoisted outside render) ===
+const COMPED = ['andrew newman', 'normies in shambs'];
+
+function render(lumaData, zapriteData){
+  // === Transform Luma guests ===
+  const ticketTypes = lumaData.ticket_types || [];
+  const rawGuests = lumaData.guests || [];
+  const eventStartAt = lumaData.event?.start_at || '2026-04-27';
+
+  // Build ticket type lookup: event_ticket_type_id -> {name, dollars}
+  const ttLookup = {};
+  ticketTypes.forEach(tt => {
+    const dollars = Math.round((tt.cents || 0) / 100);
+    ttLookup[tt.api_id] = { name: tt.name, dollars };
+    if (tt.id) ttLookup[tt.id] = { name: tt.name, dollars };
+  });
+
+  const rawOrders = zapriteData.orders || [];
+
+  // Map Luma guests to dashboard format
+  const G = rawGuests.map(entry => {
+    const guest = entry.guest || entry;
+    const email = (guest.user_email || guest.email || '').toLowerCase().trim();
+    const name = guest.user_name || guest.name || email.split('@')[0];
+    const registeredAt = guest.registered_at || guest.created_at || '';
+
+    let tier = 'GA';
+    let lumaAmount = 0;
+    const tickets = guest.event_tickets || [];
+    if (tickets.length > 0) {
+      const ticket = tickets[0];
+      const ticketName = (ticket.name || '').toLowerCase();
+      if (ticketName.includes('vip') || ticketName.includes('saylor')) tier = 'VIP';
+      lumaAmount = Math.round((ticket.amount || 0) / 100);
+    }
+
+    const isComped = COMPED.some(c => name.toLowerCase().includes(c));
+    if (isComped) { lumaAmount = 0; }
+
+    return {
+      n: name, e: email, t: tier,
+      a: isComped ? 0 : lumaAmount,
+      r: registeredAt,
+      z: isComped ? 'COMP' : 'LUMA'
+    };
+  });
+
+  // Map Zaprite orders to dashboard format
+  const Z = rawOrders.map(order => {
+    const email = order.customerData?.email || order.customerData?.name || '—';
+    const usd = Math.round((order.totalAmount || 0) / 100);
+    const txns = order.transactions || [];
+    const confirmedTx = txns.find(t => t.status === 'CONFIRMED') || txns[0] || {};
+    const sats = (confirmedTx.currency === 'BTC') ? confirmedTx.amount || 0 : 0;
+    const method = confirmedTx.method || '—';
+    const tix = order.invoice?.lineItems?.length || (usd > 0 ? Math.round(usd / 85) || 1 : 0);
+    const item = order.invoice?.lineItems?.[0]?.description || 'Ticket';
+    const status = order.status || 'PENDING';
+    const paid = order.paidAt || null;
+    return { e: email, usd, sats, method, tix, item, status, paid };
+  });
+
+  // === Compute stats ===
+  const daysLeft = Math.ceil((new Date(eventStartAt) - new Date()) / 864e5);
+  const n = G.length;
+  const ga = G.filter(g => g.t === 'GA').length;
+  const vip = G.filter(g => g.t === 'VIP').length;
+  const lumaRev = G.reduce((s, g) => s + g.a, 0);
+
+  const zComplete = Z.filter(z => z.status === 'COMPLETE' || z.status === 'PAID');
+  const btcConfirmed = zComplete.reduce((s, z) => s + z.usd, 0);
+  const btcSats = zComplete.reduce((s, z) => s + z.sats, 0);
+  const totalRev = lumaRev + btcConfirmed;
+
+  // === KPIs ===
+  animateValue($('k-g'), 0, n, 800);
+  $('k-ga').textContent = ga + ' GA';
+  $('k-vip').textContent = vip + ' VIP';
+  animateValue($('k-rev'), 0, totalRev, 1000, '$');
+  $('k-luma').textContent = fmt(lumaRev) + ' Luma';
+  $('k-btcr').textContent = fmt(btcConfirmed) + ' BTC';
+  animateValue($('k-days'), 0, Math.max(0, daysLeft), 600);
+
+  // === Progress bar (with ARIA) ===
+  $('prog-current').textContent = fmt(totalRev);
+  const progTrack = $('prog-track');
+  progTrack.setAttribute('aria-valuenow', totalRev);
+  progTrack.setAttribute('aria-valuetext', fmt(totalRev) + ' of $50,000 goal');
+  requestAnimationFrame(() => {
+    setTimeout(() => { $('prog-fill').style.width = Math.min((totalRev / 50000) * 100, 100) + '%' }, 100);
+  });
+  if (totalRev >= 10000) $('m-10k').classList.add('hit');
+  if (totalRev >= 25000) $('m-25k').classList.add('hit');
+  if (totalRev >= 35000) $('m-35k').classList.add('hit');
+  if (totalRev >= 50000) $('m-50k').classList.add('hit');
+
+  // === Donut chart (with dynamic ARIA label) ===
+  const canvas = $('donut');
+  canvas.setAttribute('aria-label', 'Payment breakdown: ' + fmt(lumaRev) + ' Luma, ' + fmt(btcConfirmed) + ' Zaprite BTC');
+  $('donut-total').textContent = fmt(totalRev);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 140 * dpr; canvas.height = 140 * dpr;
+  canvas.style.width = '140px'; canvas.style.height = '140px';
+  ctx.scale(dpr, dpr);
+  const cx = 70, cy = 70, r = 56, lw = 12;
+  const segments = [
+    { val: lumaRev, color: COLORS.blue, label: 'Luma (Card)' },
+    { val: btcConfirmed, color: COLORS.btc, label: 'Zaprite (BTC)' }
+  ].filter(s => s.val > 0);
+  const segTotal = segments.reduce((s, seg) => s + seg.val, 0);
+  let startAngle = -Math.PI / 2;
+  segments.forEach(seg => {
+    const angle = (seg.val / segTotal) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, startAngle + angle);
+    ctx.strokeStyle = seg.color;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    startAngle += angle + .04;
+  });
+
+  // === Revenue legend ===
+  const revItems = [
+    { label: 'Luma (Card)', val: lumaRev, color: COLORS.blue, pct: totalRev ? ((lumaRev / totalRev) * 100).toFixed(0) : 0 },
+    { label: 'Zaprite (BTC)', val: btcConfirmed, color: COLORS.btc, pct: totalRev ? ((btcConfirmed / totalRev) * 100).toFixed(0) : 0 }
+  ];
+  $('rev-legend').innerHTML = revItems.map(r => `
+    <div class="rev-item">
+      <div class="rev-dot" style="background:${r.color}"></div>
+      <div class="rev-item-info">
+        <div style="display:flex;justify-content:space-between"><span class="rev-item-label">${r.label}</span><span class="rev-item-val">${fmt(r.val)}</span></div>
+        <div class="rev-item-bar"><div class="rev-item-fill" style="width:${r.pct}%;background:${r.color}"></div></div>
+      </div>
+    </div>
+  `).join('');
+
+  // === Registration timeline (with keyboard support) ===
+  const hours = {};
+  G.forEach(g => {
+    if (!g.r) return;
+    const d = new Date(g.r);
+    const key = d.toISOString().slice(0, 13);
+    hours[key] = (hours[key] || 0) + 1;
+  });
+  const hKeys = Object.keys(hours).sort();
+  const maxH = Math.max(...Object.values(hours));
+  $('timeline').setAttribute('role', 'img');
+  $('timeline').setAttribute('aria-label', 'Registration timeline showing ' + hKeys.length + ' time periods');
+  $('timeline').innerHTML = hKeys.map(k => {
+    const h = new Date(k + ':00:00Z');
+    const label = h.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + h.toLocaleTimeString('en-US', { hour: 'numeric' });
+    const pct = (hours[k] / maxH) * 100;
+    return `<div class="timeline-bar" tabindex="0" role="listitem" aria-label="${label}: ${hours[k]} registrations" style="height:${Math.max(pct, 8)}%;background:${pct > 70 ? 'var(--accent)' : pct > 40 ? 'rgba(255,255,255,.15)' : 'rgba(255,255,255,.06)'}"><div class="tip">${label}: ${hours[k]}</div></div>`;
+  }).join('');
+
+  // === Insights ===
+  const btcPct = totalRev ? ((btcConfirmed / totalRev) * 100).toFixed(0) : 0;
+  const vipRev = G.filter(g => g.t === 'VIP').reduce((s, g) => s + g.a, 0);
+  const vipPct = totalRev ? ((vipRev / totalRev) * 100).toFixed(0) : 0;
+
+  const insightsArr = [
+    { cls: 'hot', h: 'Velocity', b: `<strong>${n} guests</strong> registered. <strong>${Math.max(0, daysLeft)} days</strong> remaining.` },
+    { cls: 'btc', h: 'Lightning', b: `<strong>${zComplete.length} confirmed</strong> Lightning payments — <strong>${fmtSats(btcSats)}</strong> (${fmt(btcConfirmed)}). ${btcPct}% of revenue on BTC rails.` },
+    { cls: 'gold', h: 'VIP Mix', b: `<strong>${vip} VIP</strong> guests driving <strong>${fmt(vipRev)}</strong> — ${vipPct}% of total revenue from ${n ? ((vip / n) * 100).toFixed(0) : 0}% of guests.` },
+    { cls: 'green', h: 'Channels', b: `<strong>Luma</strong>: ${fmt(lumaRev)} · <strong>Zaprite</strong>: ${fmt(btcConfirmed)}. Combined: <strong>${fmt(totalRev)}</strong>.` }
+  ];
+
+  $('insights').innerHTML = insightsArr.map(i => `<div class="insight ${i.cls}"><div class="insight-h">${i.h}</div><div class="insight-b">${i.b}</div></div>`).join('');
+
+  // === Zaprite table ===
+  $('z-n').textContent = Z.length + ' orders';
+  $('z-b').innerHTML = Z.map(z => {
+    const isComplete = z.status === 'COMPLETE' || z.status === 'PAID';
+    const statusTag = isComplete ? '<span class="tag tag-confirmed">Confirmed</span>' : '<span class="tag tag-pend">' + z.status + '</span>';
+    const methodTag = z.method === 'LIGHTNING' ? '<span class="tag tag-ln">&#9889; Lightning</span>' : z.method === 'BITCOIN' ? '<span class="tag tag-btc">&#8383; On-chain</span>' : '<span style="color:var(--t3)">' + z.method + '</span>';
+    const paidStr = z.paid ? new Date(z.paid).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + new Date(z.paid).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
+    return `<tr>
+      <td><div class="nm">${z.e}</div></td>
+      <td style="font-family:var(--m);font-size:.75rem">${fmt(z.usd)}</td>
+      <td class="sats">${z.sats ? fmtSats(z.sats) : '—'}</td>
+      <td>${methodTag}</td>
+      <td style="font-family:var(--m);font-size:.7rem">${z.tix || '—'}</td>
+      <td>${statusTag}</td>
+      <td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${paidStr}</td>
+    </tr>`;
+  }).join('');
+
+  // === Guest table with sort + search + keyboard-accessible headers ===
+  let sortCol = 'r', sortDir = 'desc', searchQuery = '';
+  function renderTable(){
+    const filtered = G.filter(g => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return g.n.toLowerCase().includes(q) || g.e.toLowerCase().includes(q) || g.t.toLowerCase().includes(q);
+    });
+    const d = [...filtered].sort((a, b) => {
+      let av = sortCol === 'p' ? a.a : a[sortCol], bv = sortCol === 'p' ? b.a : b[sortCol];
+      if (typeof av === 'string') av = av.toLowerCase();
+      if (typeof bv === 'string') bv = bv.toLowerCase();
+      return sortDir === 'asc' ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
+    });
+    $('t-n').textContent = d.length + (searchQuery ? ' / ' + G.length : '');
+    const cols = [{ f: 'n', l: 'Name' }, { f: 't', l: 'Tier' }, { f: 'p', l: 'Price' }, { f: 'z', l: 'Channel' }, { f: 'r', l: 'Registered' }];
+    $('t-h').innerHTML = '<tr role="row">' + cols.map(c => {
+      const active = sortCol === c.f;
+      const ariaSort = active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+      const ar = active ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+      return `<th role="columnheader" aria-sort="${ariaSort}" tabindex="0" class="${active ? 'sorted' : ''}" onclick="doSort('${c.f}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();doSort('${c.f}')}">${c.l}${ar}</th>`;
+    }).join('') + '</tr>';
+    $('t-b').innerHTML = d.map(g => {
+      const tk = g.t === 'VIP' ? '<span class="tag tag-vip">VIP</span>' : '<span class="tag tag-ga">GA</span>';
+      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : '<span class="tag tag-luma">Luma</span>';
+      const dt = new Date(g.r);
+      const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
+      const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(g.a);
+      return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
+    }).join('');
+  }
+  window.doSort = function(f){
+    if (sortCol === f) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = f; sortDir = f === 'r' ? 'desc' : 'asc'; }
+    renderTable();
+  };
+  $('guest-search').addEventListener('input', function(){ searchQuery = this.value; renderTable() });
+  renderTable();
+}
+</script>
+</body>
+</html>
