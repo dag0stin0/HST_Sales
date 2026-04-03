@@ -404,22 +404,37 @@ function render(lumaData, zapriteData){
     return { e: email, usd, sats, method, tix, item, status, paid };
   });
 
+  // === Deduplicate: if a Luma guest also has a completed Zaprite order, ===
+  // === attribute them to Zaprite only (avoid double-counting guests + revenue) ===
+  const zComplete = Z.filter(z => z.status === 'COMPLETE' || z.status === 'PAID');
+  const zapriteEmails = new Set(zComplete.map(z => z.e.toLowerCase().trim()).filter(e => e && e !== '—'));
+
+  G.forEach(g => {
+    if (zapriteEmails.has(g.e)) {
+      g.a = 0;          // revenue comes from Zaprite, not Luma
+      g.z = 'BTC';      // mark as BTC buyer
+      g.dedupe = true;   // flag so we don't double-count in guest total
+    }
+  });
+
   // === Compute stats ===
   const daysLeft = Math.ceil((new Date(eventStartAt) - new Date()) / 864e5);
-  const n = G.length;
-  const ga = G.filter(g => g.t === 'GA').length;
-  const vip = G.filter(g => g.t === 'VIP').length;
-  const lumaRev = G.reduce((s, g) => s + g.a, 0);
+  const lumaOnly = G.filter(g => !g.dedupe);
+  const lumaGuests = lumaOnly.length;
+  const ga = lumaOnly.filter(g => g.t === 'GA').length;
+  const vip = lumaOnly.filter(g => g.t === 'VIP').length;
+  const lumaRev = lumaOnly.reduce((s, g) => s + g.a, 0);
 
-  const zComplete = Z.filter(z => z.status === 'COMPLETE' || z.status === 'PAID');
+  const btcTickets = zComplete.reduce((s, z) => s + (z.tix || 0), 0);
   const btcConfirmed = zComplete.reduce((s, z) => s + z.usd, 0);
   const btcSats = zComplete.reduce((s, z) => s + z.sats, 0);
   const totalRev = lumaRev + btcConfirmed;
+  const n = lumaGuests + btcTickets;
 
   // === KPIs ===
   animateValue($('k-g'), 0, n, 800);
   $('k-ga').textContent = ga + ' GA';
-  $('k-vip').textContent = vip + ' VIP';
+  $('k-vip').textContent = vip + ' VIP · ' + btcTickets + ' BTC';
   animateValue($('k-rev'), 0, totalRev, 1000, '$');
   $('k-luma').textContent = fmt(lumaRev) + ' Luma';
   $('k-btcr').textContent = fmt(btcConfirmed) + ' BTC';
@@ -500,7 +515,7 @@ function render(lumaData, zapriteData){
   const vipPct = totalRev ? ((vipRev / totalRev) * 100).toFixed(0) : 0;
 
   const insightsArr = [
-    { cls: 'hot', h: 'Velocity', b: `<strong>${n} guests</strong> registered. <strong>${Math.max(0, daysLeft)} days</strong> remaining.` },
+    { cls: 'hot', h: 'Velocity', b: `<strong>${n} tickets</strong> sold (${lumaGuests} Luma + ${btcTickets} BTC). <strong>${Math.max(0, daysLeft)} days</strong> remaining.` },
     { cls: 'btc', h: 'Lightning', b: `<strong>${zComplete.length} confirmed</strong> Lightning payments — <strong>${fmtSats(btcSats)}</strong> (${fmt(btcConfirmed)}). ${btcPct}% of revenue on BTC rails.` },
     { cls: 'gold', h: 'VIP Mix', b: `<strong>${vip} VIP</strong> guests driving <strong>${fmt(vipRev)}</strong> — ${vipPct}% of total revenue from ${n ? ((vip / n) * 100).toFixed(0) : 0}% of guests.` },
     { cls: 'green', h: 'Channels', b: `<strong>Luma</strong>: ${fmt(lumaRev)} · <strong>Zaprite</strong>: ${fmt(btcConfirmed)}. Combined: <strong>${fmt(totalRev)}</strong>.` }
@@ -549,7 +564,7 @@ function render(lumaData, zapriteData){
     }).join('') + '</tr>';
     $('t-b').innerHTML = d.map(g => {
       const tk = g.t === 'VIP' ? '<span class="tag tag-vip">VIP</span>' : '<span class="tag tag-ga">GA</span>';
-      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : '<span class="tag tag-luma">Luma</span>';
+      const ch = g.z === 'COMP' ? '<span class="tag tag-confirmed">COMP</span>' : g.z === 'BTC' ? '<span class="tag tag-btc">BTC</span>' : '<span class="tag tag-luma">Luma</span>';
       const dt = new Date(g.r);
       const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
       const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(g.a);
