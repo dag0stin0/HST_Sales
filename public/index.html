@@ -440,8 +440,7 @@ function render(lumaData, zapriteData){
   // === KPIs ===
   animateValue($('k-g'), 0, n, 800);
   $('k-ga').textContent = ga + ' GA';
-  const btcTotal = G.filter(g => g.z === 'BTC').reduce((s, g) => s + (g.tix || 1), 0) + btcExtraTickets;
-  $('k-vip').textContent = vip + ' VIP · ' + btcTotal + ' BTC';
+  $('k-vip').textContent = vip + ' VIP';
   animateValue($('k-rev'), 0, totalRev, 1000, '$');
   $('k-luma').textContent = fmt(lumaRev) + ' Luma';
   $('k-btcr').textContent = fmt(btcConfirmed) + ' BTC';
