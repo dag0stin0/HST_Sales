@@ -364,13 +364,14 @@ function render(lumaData, zapriteData){
     let tier = 'GA';
     let lumaAmount = 0;
     const tickets = guest.event_tickets || [];
+    const lumaTicketCount = tickets.length || 1;
     if (tickets.length > 0) {
       const ticket = tickets[0];
       const ticketName = (ticket.name || '').toLowerCase();
       if (ticketName.includes('vip') || ticketName.includes('saylor')) tier = 'VIP';
 
-      // ticket.amount is the actual transaction amount in cents
-      lumaAmount = Math.round((ticket.amount || 0) / 100);
+      // Sum revenue across ALL tickets for multi-ticket buyers
+      lumaAmount = tickets.reduce((sum, tk) => sum + Math.round((tk.amount || 0) / 100), 0);
     }
 
     // Comped guests — no revenue counted
@@ -384,7 +385,8 @@ function render(lumaData, zapriteData){
       t: tier,
       a: isComped ? 0 : lumaAmount,   // Luma revenue — straight from Luma, no Zaprite involvement
       r: registeredAt,
-      z: isComped ? 'COMP' : 'LUMA'
+      z: isComped ? 'COMP' : 'LUMA',
+      tix: lumaTicketCount
     };
   });
 
@@ -420,9 +422,9 @@ function render(lumaData, zapriteData){
   // === Compute stats ===
   const daysLeft = Math.ceil((new Date(eventStartAt) - new Date()) / 864e5);
   const lumaOnly = G.filter(g => !g.dedupe);
-  const lumaGuests = lumaOnly.length;
-  const ga = lumaOnly.filter(g => g.t === 'GA').length;
-  const vip = lumaOnly.filter(g => g.t === 'VIP').length;
+  const lumaGuests = lumaOnly.reduce((s, g) => s + (g.tix || 1), 0);
+  const ga = lumaOnly.filter(g => g.t === 'GA').reduce((s, g) => s + (g.tix || 1), 0);
+  const vip = lumaOnly.filter(g => g.t === 'VIP').reduce((s, g) => s + (g.tix || 1), 0);
   const lumaRev = lumaOnly.reduce((s, g) => s + g.a, 0);
 
   const btcTickets = zComplete.reduce((s, z) => s + (z.tix || 0), 0);
@@ -550,13 +552,15 @@ function render(lumaData, zapriteData){
       return g.n.toLowerCase().includes(q) || g.e.toLowerCase().includes(q) || g.t.toLowerCase().includes(q);
     });
     const d = [...filtered].sort((a, b) => {
-      let av = sortCol === 'p' ? a.a : a[sortCol], bv = sortCol === 'p' ? b.a : b[sortCol];
+      let av = sortCol === 'p' ? a.a : sortCol === 'tix' ? (a.tix || 1) : a[sortCol], bv = sortCol === 'p' ? b.a : sortCol === 'tix' ? (b.tix || 1) : b[sortCol];
       if (typeof av === 'string') av = av.toLowerCase();
       if (typeof bv === 'string') bv = bv.toLowerCase();
       return sortDir === 'asc' ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
     });
-    $('t-n').textContent = d.length + (searchQuery ? ' / ' + G.length : '');
-    const cols = [{ f: 'n', l: 'Name' }, { f: 't', l: 'Tier' }, { f: 'p', l: 'Price' }, { f: 'z', l: 'Channel' }, { f: 'r', l: 'Registered' }];
+    const filteredTix = d.reduce((s, g) => s + (g.tix || 1), 0);
+    const totalTix = G.reduce((s, g) => s + (g.tix || 1), 0);
+    $('t-n').textContent = filteredTix + (searchQuery ? ' / ' + totalTix : '') + ' tickets';
+    const cols = [{ f: 'n', l: 'Name' }, { f: 't', l: 'Tier' }, { f: 'tix', l: 'Qty' }, { f: 'p', l: 'Price' }, { f: 'z', l: 'Channel' }, { f: 'r', l: 'Registered' }];
     $('t-h').innerHTML = '<tr>' + cols.map(c => {
       const active = sortCol === c.f;
       const ar = active ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
@@ -568,7 +572,7 @@ function render(lumaData, zapriteData){
       const dt = new Date(g.r);
       const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
       const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(g.a);
-      return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
+      return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem;text-align:center">${g.tix || 1}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
     }).join('');
   }
   window.doSort = function(f){
