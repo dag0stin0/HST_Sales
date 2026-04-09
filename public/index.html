@@ -435,7 +435,7 @@ function render(lumaData, zapriteData){
   const btcConfirmed = zComplete.reduce((s, z) => s + z.usd, 0);
   const btcSats = zComplete.reduce((s, z) => s + z.sats, 0);
   const totalRev = lumaRev + btcConfirmed;
-  const n = lumaTickets + btcExtraTickets;
+  const n = lumaTickets;
 
   // === KPIs ===
   animateValue($('k-g'), 0, n, 800);
