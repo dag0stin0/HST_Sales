@@ -576,7 +576,8 @@ function render(lumaData, zapriteData){
       const dt = new Date(g.r);
       const ds = g.r ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
       const price = g.z === 'COMP' ? '<span style="color:var(--green)">COMP</span>' : fmt(g.a);
-      return `<tr><td><div class="nm">${g.n}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem;text-align:center">${g.tix || 1}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
+      const verified = g.z === 'BTC' ? ' <span style="font-size:.55rem;color:var(--green);font-family:var(--m)">&#10003; PAID</span>' : '';
+      return `<tr><td><div class="nm">${g.n}${verified}</div><div class="em">${g.e}</div></td><td>${tk}</td><td style="font-family:var(--m);font-size:.72rem;text-align:center">${g.tix || 1}</td><td style="font-family:var(--m);font-size:.72rem">${price}</td><td>${ch}</td><td style="font-family:var(--m);font-size:.65rem;color:var(--t3);white-space:nowrap">${ds}</td></tr>`;
     }).join('');
   }
   window.doSort = function(f){
