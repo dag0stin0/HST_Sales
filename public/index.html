@@ -411,32 +411,37 @@ function render(lumaData, zapriteData){
   const zComplete = Z.filter(z => z.status === 'COMPLETE' || z.status === 'PAID');
   const zapriteEmails = new Set(zComplete.map(z => z.e.toLowerCase().trim()).filter(e => e && e !== '—'));
 
+  // For matched guests: use Luma ticket count (authoritative), attribute revenue to Zaprite
+  const matchedEmails = new Set();
   G.forEach(g => {
     if (zapriteEmails.has(g.e)) {
       g.a = 0;          // revenue comes from Zaprite, not Luma
       g.z = 'BTC';      // mark as BTC buyer
-      g.dedupe = true;   // flag so we don't double-count in guest total
+      matchedEmails.add(g.e);
     }
   });
 
   // === Compute stats ===
   const daysLeft = Math.ceil((new Date(eventStartAt) - new Date()) / 864e5);
-  const lumaOnly = G.filter(g => !g.dedupe);
-  const lumaGuests = lumaOnly.reduce((s, g) => s + (g.tix || 1), 0);
-  const ga = lumaOnly.filter(g => g.t === 'GA').reduce((s, g) => s + (g.tix || 1), 0);
-  const vip = lumaOnly.filter(g => g.t === 'VIP').reduce((s, g) => s + (g.tix || 1), 0);
-  const lumaRev = lumaOnly.reduce((s, g) => s + g.a, 0);
+  // All Luma guests count (including BTC-matched) — Luma is the source of truth for ticket qty
+  const lumaTickets = G.reduce((s, g) => s + (g.tix || 1), 0);
+  const ga = G.filter(g => g.t === 'GA').reduce((s, g) => s + (g.tix || 1), 0);
+  const vip = G.filter(g => g.t === 'VIP').reduce((s, g) => s + (g.tix || 1), 0);
+  const lumaRev = G.filter(g => g.z === 'LUMA' || g.z === 'COMP').reduce((s, g) => s + g.a, 0);
 
-  const btcTickets = zComplete.reduce((s, z) => s + (z.tix || 0), 0);
+  // Only count unmatched Zaprite orders as additional tickets
+  const unmatchedZ = zComplete.filter(z => !matchedEmails.has(z.e.toLowerCase().trim()));
+  const btcExtraTickets = unmatchedZ.reduce((s, z) => s + (z.tix || 1), 0);
   const btcConfirmed = zComplete.reduce((s, z) => s + z.usd, 0);
   const btcSats = zComplete.reduce((s, z) => s + z.sats, 0);
   const totalRev = lumaRev + btcConfirmed;
-  const n = lumaGuests + btcTickets;
+  const n = lumaTickets + btcExtraTickets;
 
   // === KPIs ===
   animateValue($('k-g'), 0, n, 800);
   $('k-ga').textContent = ga + ' GA';
-  $('k-vip').textContent = vip + ' VIP · ' + btcTickets + ' BTC';
+  const btcTotal = G.filter(g => g.z === 'BTC').reduce((s, g) => s + (g.tix || 1), 0) + btcExtraTickets;
+  $('k-vip').textContent = vip + ' VIP · ' + btcTotal + ' BTC';
   animateValue($('k-rev'), 0, totalRev, 1000, '$');
   $('k-luma').textContent = fmt(lumaRev) + ' Luma';
   $('k-btcr').textContent = fmt(btcConfirmed) + ' BTC';
@@ -517,7 +522,7 @@ function render(lumaData, zapriteData){
   const vipPct = totalRev ? ((vipRev / totalRev) * 100).toFixed(0) : 0;
 
   const insightsArr = [
-    { cls: 'hot', h: 'Velocity', b: `<strong>${n} tickets</strong> sold (${lumaGuests} Luma + ${btcTickets} BTC). <strong>${Math.max(0, daysLeft)} days</strong> remaining.` },
+    { cls: 'hot', h: 'Velocity', b: `<strong>${n} tickets</strong> sold (${lumaTickets} Luma + ${btcExtraTickets} BTC-only). <strong>${Math.max(0, daysLeft)} days</strong> remaining.` },
     { cls: 'btc', h: 'Lightning', b: `<strong>${zComplete.length} confirmed</strong> Lightning payments — <strong>${fmtSats(btcSats)}</strong> (${fmt(btcConfirmed)}). ${btcPct}% of revenue on BTC rails.` },
     { cls: 'gold', h: 'VIP Mix', b: `<strong>${vip} VIP</strong> guests driving <strong>${fmt(vipRev)}</strong> — ${vipPct}% of total revenue from ${n ? ((vip / n) * 100).toFixed(0) : 0}% of guests.` },
     { cls: 'green', h: 'Channels', b: `<strong>Luma</strong>: ${fmt(lumaRev)} · <strong>Zaprite</strong>: ${fmt(btcConfirmed)}. Combined: <strong>${fmt(totalRev)}</strong>.` }
