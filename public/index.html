@@ -220,9 +220,9 @@ tbody tr:last-child td{border-bottom:none}
   <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
   <div class="progress-milestones">
     <span class="milestone" id="m-10k">$10K</span>
+    <span class="milestone" id="m-20k">$20K</span>
     <span class="milestone" id="m-25k">$25K</span>
-    <span class="milestone" id="m-35k">$35K</span>
-    <span class="milestone" id="m-50k">$50K+</span>
+    <span class="milestone" id="m-30k">$30K</span>
   </div>
 </section>
 
@@ -449,13 +449,13 @@ function render(lumaData, zapriteData){
   // === Progress bar ===
   $('prog-current').textContent = fmt(totalRev);
   requestAnimationFrame(() => {
-    // Use 50K as visual reference for the bar, just for display
-    setTimeout(() => { $('prog-fill').style.width = Math.min((totalRev / 50000) * 100, 100) + '%' }, 100);
+    // Use 30K as visual reference for the bar
+    setTimeout(() => { $('prog-fill').style.width = Math.min((totalRev / 30000) * 100, 100) + '%' }, 100);
   });
   if (totalRev >= 10000) $('m-10k').classList.add('hit');
+  if (totalRev >= 20000) $('m-20k').classList.add('hit');
   if (totalRev >= 25000) $('m-25k').classList.add('hit');
-  if (totalRev >= 35000) $('m-35k').classList.add('hit');
-  if (totalRev >= 50000) $('m-50k').classList.add('hit');
+  if (totalRev >= 30000) $('m-30k').classList.add('hit');
 
   // === Donut chart ===
   $('donut-total').textContent = fmt(totalRev);

@@ -1,0 +1,32 @@
+{
+  "orders": [
+    {
+      "customerData": { "email": "vince@bitcoin.com", "name": "Vincesat" },
+      "totalAmount": 8500,
+      "status": "COMPLETE",
+      "paidAt": "2026-03-17T09:30:00Z",
+      "paymentLink": { "id": "pl_WlSsmXQdAd" },
+      "transactions": [{ "status": "CONFIRMED", "currency": "BTC", "amount": 95000, "method": "LIGHTNING" }],
+      "invoice": { "lineItems": [{ "description": "GA Ticket" }] },
+      "orderId": "luma_abc123"
+    },
+    {
+      "customerData": { "email": "satoshi@gmx.com", "name": "Satoshi N" },
+      "totalAmount": 17000,
+      "status": "COMPLETE",
+      "paidAt": "2026-03-19T20:00:00Z",
+      "paymentLink": { "id": "pl_WlSsmXQdAd" },
+      "transactions": [{ "status": "CONFIRMED", "currency": "BTC", "amount": 190000, "method": "LIGHTNING" }],
+      "invoice": { "lineItems": [{ "description": "GA Ticket" }, { "description": "GA Ticket" }] }
+    },
+    {
+      "customerData": { "email": "pending@test.com", "name": "Pending Pete" },
+      "totalAmount": 8500,
+      "status": "PENDING",
+      "paidAt": null,
+      "paymentLink": { "id": "pl_WlSsmXQdAd" },
+      "transactions": [{ "status": "PENDING", "currency": "BTC", "amount": 95000, "method": "LIGHTNING" }],
+      "invoice": { "lineItems": [{ "description": "GA Ticket" }] }
+    }
+  ]
+}

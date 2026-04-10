@@ -1,0 +1,63 @@
+{
+  "event": {
+    "id": "evt_mock",
+    "name": "Hotstyle Takeover III",
+    "start_at": "2026-04-27T22:00:00Z",
+    "end_at": "2026-04-28T04:00:00Z",
+    "url": "https://lu.ma/6cvlxirh"
+  },
+  "ticket_types": [
+    { "api_id": "tt_ga", "name": "General Admission", "cents": 8500 },
+    { "api_id": "tt_vip", "name": "VIP", "cents": 15000 }
+  ],
+  "guests": [
+    {
+      "guest": {
+        "user_name": "Alice Smith",
+        "user_email": "alice@test.com",
+        "registered_at": "2026-03-15T14:00:00Z",
+        "event_tickets": [{ "name": "General Admission", "amount": 8500 }]
+      }
+    },
+    {
+      "guest": {
+        "user_name": "Bob Jones",
+        "user_email": "bob@test.com",
+        "registered_at": "2026-03-16T10:00:00Z",
+        "event_tickets": [{ "name": "VIP Saylor Table", "amount": 15000 }]
+      }
+    },
+    {
+      "guest": {
+        "user_name": "Vincesat",
+        "user_email": "vince@bitcoin.com",
+        "registered_at": "2026-03-17T09:00:00Z",
+        "event_tickets": [{ "name": "General Admission", "amount": 0 }]
+      }
+    },
+    {
+      "guest": {
+        "user_name": "Carol Dash",
+        "user_email": "carol@test.com",
+        "registered_at": "2026-03-18T11:00:00Z",
+        "event_tickets": [{ "name": "General Admission", "amount": 8500 }]
+      }
+    },
+    {
+      "guest": {
+        "user_name": "Andrew Newman",
+        "user_email": "andrew@test.com",
+        "registered_at": "2026-03-14T08:00:00Z",
+        "event_tickets": [{ "name": "General Admission", "amount": 8500 }]
+      }
+    },
+    {
+      "guest": {
+        "user_name": "Dave Lightning",
+        "user_email": "dave@btc.org",
+        "registered_at": "2026-03-20T16:00:00Z",
+        "event_tickets": [{ "name": "General Admission", "amount": 8500 }]
+      }
+    }
+  ]
+}
