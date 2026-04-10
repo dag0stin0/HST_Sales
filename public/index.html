@@ -6,13 +6,15 @@
 <meta name="theme-color" content="#050505">
 <meta name="description" content="HOTSTYLE III Event Dashboard — Live ticketing, revenue tracking, and guest management">
 <title>HOTSTYLE III</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#050505;--s:#0a0a0a;--s2:#111;--s3:#1a1a1a;
   --b:rgba(255,255,255,.06);--b2:rgba(255,255,255,.08);
-  --t:#f0f0f0;--t2:#999;--t3:#8a8a8a;
+  --t:#f0f0f0;--t2:#aaa;--t3:#8a8a8a;
   --accent:#ff3d00;--accent-g:linear-gradient(135deg,#ff3d00,#ff6b35);
   --gold:#e8b931;--blue:#3d8bfd;--btc:#f7931a;--green:#34d399;--red:#ff4757;
   --vip-bg:rgba(232,185,49,.03);--btc-bg:rgba(247,147,26,.03);
@@ -34,7 +36,7 @@ body{background:var(--bg);color:var(--t);font-family:var(--f);-webkit-font-smoot
 /* Header */
 .hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--b)}
 .hdr-l h1{font-size:2rem;font-weight:700;letter-spacing:-.03em;line-height:1}
-.hdr-l h1 span{background:var(--accent-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-l h1 span{color:var(--accent)}
 .hdr-l .sub{font-size:.7rem;color:var(--t3);margin-top:6px;font-family:var(--m);letter-spacing:.06em;text-transform:uppercase}
 .hdr-r{text-align:right;display:flex;flex-direction:column;gap:4px}
 .hdr-r .date{font-size:.85rem;font-weight:600;color:var(--t)}
@@ -61,7 +63,7 @@ body{background:var(--bg);color:var(--t);font-family:var(--f);-webkit-font-smoot
 
 /* KPIs */
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
-.k{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);padding:22px 22px 18px;position:relative;overflow:hidden;backdrop-filter:blur(20px);transition:border-color .3s,transform .2s}
+.k{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);padding:22px 22px 18px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s}
 .k:hover{border-color:var(--b2);transform:translateY(-1px)}
 .k::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
 .k.c1::before{background:linear-gradient(90deg,var(--t) 30%,transparent)}
@@ -83,7 +85,7 @@ body{background:var(--bg);color:var(--t);font-family:var(--f);-webkit-font-smoot
 
 /* Mid section: grid for chart + insights */
 .mid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
-.card{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);padding:22px;backdrop-filter:blur(20px);display:flex;flex-direction:column}
+.card{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);padding:22px;display:flex;flex-direction:column}
 .card-t{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
 .card-t .badge{font-size:.55rem;font-family:var(--m);color:var(--accent);background:rgba(255,61,0,.08);padding:3px 8px;border-radius:5px;text-transform:none;letter-spacing:0}
 
@@ -116,7 +118,7 @@ body{background:var(--bg);color:var(--t);font-family:var(--f);-webkit-font-smoot
 .insight-b strong{color:var(--t);font-weight:600}
 
 /* Tables */
-.tbl-wrap{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);overflow:hidden;backdrop-filter:blur(20px);margin-bottom:16px}
+.tbl-wrap{background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--b);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
 .tbl-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--b)}
 .tbl-bar h3{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t2);font-weight:700}
 .tbl-bar h3::after{content:'';display:block;width:24px;height:2px;background:var(--accent);margin-top:4px;border-radius:1px}
@@ -131,6 +133,8 @@ table{width:100%;border-collapse:collapse}
 thead th{text-align:left;padding:12px 18px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);font-weight:700;cursor:pointer;user-select:none;border-bottom:2px solid var(--b2);white-space:nowrap;transition:color .15s}
 thead th:hover{color:var(--accent)}
 thead th.sorted{color:var(--accent)}
+thead th.sorted::after{content:' \25BC';font-size:.45rem}
+thead th.sorted.asc::after{content:' \25B2';font-size:.45rem}
 tbody td{padding:13px 18px;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.03)}
 tbody tr{transition:background .15s}
 tbody tr:hover{background:rgba(255,255,255,.02)}
@@ -572,7 +576,7 @@ function render(lumaData, zapriteData){
     $('t-h').innerHTML = '<tr>' + cols.map(c => {
       const active = sortCol === c.f;
       const ar = active ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
-      return `<th class="${active ? 'sorted' : ''}" onclick="doSort('${c.f}')">${c.l}${ar}</th>`;
+      return `<th class="${active ? 'sorted' + (sortDir === 'asc' ? ' asc' : '') : ''}" aria-sort="${active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}" onclick="doSort('${c.f}')">${c.l}${ar}</th>`;
     }).join('') + '</tr>';
     $('t-b').innerHTML = d.map(g => {
       const tk = g.t === 'VIP' ? '<span class="tag tag-vip">VIP</span>' : '<span class="tag tag-ga">GA</span>';
