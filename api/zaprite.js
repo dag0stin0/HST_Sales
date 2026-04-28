@@ -1,5 +1,8 @@
-const PAYMENT_LINK_ID = 'pl_WlSsmXQdAd';
-const EVENT_NAME = 'HotSyle TakeOver 3';
+const PAYMENT_LINK_IDS = [
+  'pl_WlSsmXQdAd', // HotSyle TakeOver 3
+  'pl_i8klspxDNN', // HOTSTYLE TIER 2 GENERAL ADMISSION
+  'pl_lLeCIMf0en', // HOTSTYLE VIP TIER 2
+];
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,7 +24,6 @@ export default async function handler(req, res) {
         page: String(page),
         sortBy: 'createdAt',
         sortOrder: 'desc',
-        search: EVENT_NAME
       });
 
       const ordersRes = await fetch(`${BASE}/v1/orders?${params}`, { headers });
@@ -36,9 +38,9 @@ export default async function handler(req, res) {
       page++;
     }
 
-    // Strict filter: only orders from the HotSyle TakeOver 3 payment link
+    const idSet = new Set(PAYMENT_LINK_IDS);
     const filtered = allOrders.filter(order =>
-      order.paymentLink?.id === PAYMENT_LINK_ID || order.paymentLinkId === PAYMENT_LINK_ID
+      idSet.has(order.paymentLink?.id) || idSet.has(order.paymentLinkId)
     );
 
     return res.status(200).json({ orders: filtered });
